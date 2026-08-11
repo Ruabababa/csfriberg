@@ -7,7 +7,15 @@ import { cached } from '../services/queryCache';
 import { compareGuess, completeGuessFeedback, MAX_GUESSES } from '../services/gameService';
 import { getPlayer, isDifficultyAvailable } from '../services/playerCache';
 import { getPlayerPerformance } from '../services/playerPerformance';
-import { GuessFeedback, Player } from '../types';
+import {
+  GuessFeedback,
+  Player,
+  majorAppearances,
+  majorWins,
+  playerStatus,
+  siAppearances,
+  siWins,
+} from '../types';
 import { rateLimit, requestIdentity } from '../middleware/rateLimit';
 import { globalStatsCacheKey, personalStatsCacheKey } from '../services/statsCache';
 import { DIFFICULTY_LEVELS } from '../difficulties';
@@ -146,9 +154,13 @@ function answerView(target: Player) {
     region: target.region,
     age: target.age,
     role: target.role,
-    majorChampionships: target.major_championships,
-    majorAppearances: target.major_appearances,
+    roles: target.roles ?? [target.role],
+    majorWins: majorWins(target),
+    majorAppearances: majorAppearances(target),
+    siWins: siWins(target),
+    siAppearances: siAppearances(target),
     isActive: Boolean(target.is_active),
+    status: playerStatus(target),
   };
 }
 

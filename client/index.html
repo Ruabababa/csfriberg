@@ -6,8 +6,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
     />
-    <meta name="theme-color" content="#160a13" />
-    <meta name="description" content="弗一把 - CS:GO / CS2 Major 选手猜测游戏，支持单人多难度与多人实时对战。" />
+    <meta name="theme-color" content="#08131f" />
+    <meta name="description" content="SiegeGuess：根据国家或地区、赛区、队伍、年龄、位置和 Major + SI 经历猜出彩虹六号职业选手。" />
     <script>
       try {
         var storedUiTheme = localStorage.getItem('ui-theme');
@@ -24,25 +24,26 @@
                 : 'blast';
         document.documentElement.dataset.theme = initTheme;
         document.documentElement.style.colorScheme = initTheme === 'blast' ? 'dark' : 'light';
-        document.documentElement.style.background = initTheme === 'blast' ? '#160a13' : '#f3f0ea';
+        document.documentElement.style.background = initTheme === 'blast' ? '#08131f' : '#f4f7f6';
         var themeColorMeta = document.querySelector('meta[name="theme-color"]');
-        if (themeColorMeta) themeColorMeta.content = initTheme === 'blast' ? '#160a13' : '#f3f0ea';
+        if (themeColorMeta) themeColorMeta.content = initTheme === 'blast' ? '#08131f' : '#f4f7f6';
         document.documentElement.dataset.themeReady = '';
       } catch (_) {
         document.documentElement.dataset.theme = 'blast';
-        document.documentElement.style.background = '#160a13';
+        document.documentElement.style.background = '#08131f';
         document.documentElement.dataset.themeReady = '';
       }
     </script>
-    <title>弗一把 - CS Major 选手猜测游戏</title>
+    <title>SiegeGuess - 彩虹六号职业选手竞猜</title>
   </head>
   <body>
-    <noscript>需要启用 JavaScript 才能运行本应用。/ JavaScript is required to run this app.</noscript>
+    <noscript>需要启用 JavaScript 才能运行 SiegeGuess。JavaScript is required to run this app.</noscript>
     <div id="root"></div>
     <link rel="stylesheet" href="/src/styles/index.css" />
     <link rel="stylesheet" href="/src/styles/themes/blast-foundation.css" media="not all" data-blast-theme />
     <link rel="stylesheet" href="/src/styles/themes/blast-pages.css" media="not all" data-blast-theme />
     <link rel="stylesheet" href="/src/styles/themes/blast-responsive.css" media="not all" data-blast-theme />
+    <link rel="stylesheet" href="/src/styles/themes/r6-brand.css" />
     <script>
       try {
         var isLightTheme = document.documentElement.dataset.theme === 'light';

@@ -81,7 +81,11 @@ export default function HomeFriendLinks({ links = FRIEND_LINKS }: { links?: read
                         data-umami-event="home-friend-link"
                         data-umami-event-name={item.name}
                       >
-                        <span className="friend-links-dialog-icon" aria-hidden="true"><Link2 size={18} /></span>
+                        {item.image ? (
+                          <img className="friend-links-dialog-image" src={item.image} alt="" />
+                        ) : (
+                          <span className="friend-links-dialog-icon" aria-hidden="true"><Link2 size={18} /></span>
+                        )}
                         <span>
                           <strong>{item.name}</strong>
                           <small>{item.description}</small>

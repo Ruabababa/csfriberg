@@ -1,0 +1,50 @@
+{
+  "provider": "liquipedia",
+  "dataVersion": "fixture-2026-08-04",
+  "generatedAt": "2026-08-04T00:00:00.000Z",
+  "fullSync": true,
+  "players": [
+    {
+      "sourceId": "fixture-alpha",
+      "nickname": "R6Alpha",
+      "nationality": "FR",
+      "region": "Europe",
+      "team": "Fixture One",
+      "birthDate": "1998-04-20",
+      "roles": ["Entry", "Flex"],
+      "status": "active",
+      "sourceUrl": "https://liquipedia.net/rainbowsix/R6Alpha",
+      "sourceUpdatedAt": "2026-08-04T00:00:00.000Z",
+      "majorSiEventIds": ["major-fixture-1", "si-fixture-1"],
+      "majorSiChampionshipEventIds": ["si-fixture-1"]
+    },
+    {
+      "sourceId": "fixture-bravo",
+      "nickname": "R6Bravo",
+      "nationality": "CA",
+      "region": "North America",
+      "team": "Fixture Two",
+      "birthDate": "2000-10-10",
+      "roles": ["Support", "IGL"],
+      "status": "active",
+      "sourceUrl": "https://liquipedia.net/rainbowsix/R6Bravo",
+      "sourceUpdatedAt": "2026-08-04T00:00:00.000Z",
+      "majorSiEventIds": ["major-fixture-2"],
+      "majorSiChampionshipEventIds": []
+    },
+    {
+      "sourceId": "fixture-charlie",
+      "nickname": "R6Charlie",
+      "nationality": "BR",
+      "region": "Brazil",
+      "team": "Fixture Three",
+      "birthDate": "2002-01-15",
+      "roles": ["Roamer"],
+      "status": "inactive",
+      "sourceUrl": "https://liquipedia.net/rainbowsix/R6Charlie",
+      "sourceUpdatedAt": "2026-08-04T00:00:00.000Z",
+      "majorSiEventIds": ["major-fixture-3"],
+      "majorSiChampionshipEventIds": []
+    }
+  ]
+}

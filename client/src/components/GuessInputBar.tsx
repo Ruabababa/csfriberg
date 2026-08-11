@@ -3,10 +3,14 @@ import { getPlayerList, searchPlayerList, subscribePlayerList } from '../api/pla
 import { errMsg } from '../api/client';
 import { toast } from './Toast';
 import { useTranslation } from 'react-i18next';
+import { countryLabel } from '../utils/playerGeography';
+import { playerTeamLabel } from '../utils/playerTeam';
 
 interface Suggestion {
   id: number;
   nickname: string;
+  team?: string;
+  nationality?: string;
 }
 
 interface Props {
@@ -19,7 +23,7 @@ interface Props {
 }
 
 /**
- * 底部输入栏:选手昵称输入 + 提交按钮,自动补全列表从输入框上方弹出(原版布局)。
+ * 底部输入栏:选手 ID 输入 + 提交按钮,自动补全列表从输入框上方弹出(原版布局)。
  * 回车提交当前高亮项,方向键或 Tab 循环切换。
  */
 export default function GuessInputBar({
@@ -150,7 +154,14 @@ export default function GuessInputBar({
                 void pick(item);
               }}
             >
-              {item.nickname}
+              <span className="autocomplete-player-name">{item.nickname}</span>
+              {(item.team || item.nationality) && (
+                <small className="autocomplete-player-meta">
+                  {[item.team ? playerTeamLabel(t, item.team) : '', item.nationality ? countryLabel(t, item.nationality) : '']
+                    .filter(Boolean)
+                    .join(' · ')}
+                </small>
+              )}
             </li>
           ))}
         </ul>

@@ -36,7 +36,16 @@ function attachClientEvents(client: Client, label: string, affectsAvailability =
 
 function makeClient(label: string): Client {
   return attachClientEvents(
-    createClient({ url: config.redisUrl, RESP: 2 }) as Client,
+    createClient({
+      url: config.redisUrl,
+      RESP: 2,
+      socket: {
+        connectTimeout: config.redisCommandTimeoutMs,
+        reconnectStrategy: config.redisRequired
+          ? (retries) => Math.min(50 * 2 ** retries, 3_000)
+          : false,
+      },
+    }) as Client,
     label,
     true
   );

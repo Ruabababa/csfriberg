@@ -1,10 +1,11 @@
 import { ReactNode, useEffect } from 'react';
-import { Globe, Crosshair, Calendar, Shield, Trophy, Layers3 } from 'lucide-react';
+import { Globe, Crosshair, Calendar, Shield, Trophy, Layers3, Activity } from 'lucide-react';
 import { playerRoleLabel } from '../utils/playerRoles';
 import { countryLabel, regionLabel } from '../utils/playerGeography';
 import ModalPortal from './ModalPortal';
 import { useTranslation } from 'react-i18next';
 import { difficultyLabel } from '../utils/difficulty';
+import { playerTeamLabel } from '../utils/playerTeam';
 
 export interface AnswerInfo {
   nickname: string;
@@ -12,24 +13,46 @@ export interface AnswerInfo {
   nationality: string;
   region?: string;
   role?: string;
-  majorChampionships?: number;
+  roles?: string[];
+  age?: number | null;
+  majorWins?: number;
   majorAppearances?: number;
+  siWins?: number;
+  siAppearances?: number;
+  status?: 'active' | 'retired' | 'unknown';
   difficulties?: string[];
 }
 
 /** 选手信息表(答案卡片/查询结果共用) */
 export function PlayerInfoTable({ answer }: { answer: AnswerInfo }) {
   const { t } = useTranslation();
-  const nationality = countryLabel(t, answer.nationality);
+  const unknown = t('common.unknown');
+  const nationality = answer.nationality ? countryLabel(t, answer.nationality) : unknown;
   const geography = answer.region
     ? `${nationality} (${regionLabel(t, answer.region)})`
     : nationality;
   const rows: [ReactNode, string, ReactNode][] = [
-    [<Shield size={14} key="i" />, t('player.team'), answer.team || '-'],
+    [<Shield size={14} key="i" />, t('player.team'), answer.team ? playerTeamLabel(t, answer.team) : unknown],
     [<Globe size={14} key="i" />, t('player.nationality'), geography],
-    [<Crosshair size={14} key="i" />, t('player.role'), answer.role ? playerRoleLabel(answer.role) : '-'],
-    [<Trophy size={14} key="i" />, t('player.majorChampionships'), answer.majorChampionships ?? 0],
-    [<Calendar size={14} key="i" />, t('player.majorAppearances'), answer.majorAppearances ?? '-'],
+    [<Calendar size={14} key="i" />, t('player.age'), answer.age ?? unknown],
+    [
+      <Crosshair size={14} key="i" />,
+      t('player.role'),
+      answer.roles?.length
+        ? answer.roles.map(playerRoleLabel).join(' / ')
+        : answer.role ? playerRoleLabel(answer.role) : unknown,
+    ],
+    [<Calendar size={14} key="i" />, t('player.majorAppearances'), answer.majorAppearances ?? 0],
+    [<Trophy size={14} key="i" />, t('player.majorWins'), answer.majorWins ?? 0],
+    [<Calendar size={14} key="i" />, t('player.siAppearances'), answer.siAppearances ?? 0],
+    [<Trophy size={14} key="i" />, t('player.siWins'), answer.siWins ?? 0],
+    [
+      <Activity size={14} key="i" />,
+      t('player.status'),
+      answer.status === 'active'
+        ? t('common.active')
+        : answer.status === 'retired' ? t('common.retired') : t('common.unknown'),
+    ],
   ];
   if (answer.difficulties) {
     rows.push([

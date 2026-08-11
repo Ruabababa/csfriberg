@@ -501,6 +501,14 @@
 }
 .admin-player-field { display: grid; gap: 6px; min-width: 0; }
 .admin-player-field > span { color: var(--text-sec); font-size: 0.86rem; font-weight: 600; }
+.admin-player-role-field { margin: 0; padding: 0; border: 0; }
+.admin-player-role-field legend { margin-bottom: 6px; color: var(--text-sec); font-size: 0.86rem; font-weight: 600; }
+.admin-player-role-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 12px; }
+.admin-player-role-options label { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 0.84rem; }
+.admin-player-role-options input { width: 16px; height: 16px; margin: 0; accent-color: var(--primary); }
+.admin-player-source { margin-top: 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card-soft); }
+.admin-player-source summary { cursor: pointer; font-weight: 700; }
+.admin-player-source[open] summary { margin-bottom: 14px; }
 .admin-player-flags {
   display: flex;
   align-items: center;

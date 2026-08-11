@@ -36,8 +36,8 @@ ARG OCI_SOURCE=""
 ARG OCI_REVISION=""
 ARG OCI_VERSION=""
 
-LABEL org.opencontainers.image.title="csgofriberg" \
-      org.opencontainers.image.description="PostgreSQL-only csgofriberg game server and web client" \
+LABEL org.opencontainers.image.title="SiegeGuess" \
+      org.opencontainers.image.description="Rainbow Six Siege player guessing game server and web client" \
       org.opencontainers.image.source=$OCI_SOURCE \
       org.opencontainers.image.revision=$OCI_REVISION \
       org.opencontainers.image.version=$OCI_VERSION

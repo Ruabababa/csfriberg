@@ -24,10 +24,14 @@ const answer: PlayerInfo = {
   region: 'Asia',
   team: 'Team',
   age: 24,
-  role: 'Rifler',
-  majorChampionships: 1,
+  role: 'Entry',
+  roles: ['Entry', 'Flex'],
+  majorWins: 1,
   majorAppearances: 4,
+  siWins: 0,
+  siAppearances: 2,
   isActive: true,
+  status: 'active',
 };
 
 function guess(playerId: number, nickname: string, correct = false): GuessFeedback {
@@ -41,9 +45,11 @@ function guess(playerId: number, nickname: string, correct = false): GuessFeedba
       team: attribute,
       age: { value: 24, level: attribute.level },
       role: attribute,
-      majorChampionships: { value: 1, level: attribute.level },
+      majorWins: { value: 1, level: attribute.level },
       majorAppearances: { value: 4, level: attribute.level },
-      isActive: { value: true, level: attribute.level },
+      siWins: { value: 0, level: attribute.level },
+      siAppearances: { value: 2, level: attribute.level },
+      status: { value: 'active', level: attribute.level },
     },
   };
 }
@@ -82,8 +88,11 @@ const room: RoomState = {
       nationality: answer.nationality,
       region: answer.region,
       role: answer.role,
-      majorChampionships: answer.majorChampionships,
+      majorWins: answer.majorWins,
       majorAppearances: answer.majorAppearances,
+      siWins: answer.siWins,
+      siAppearances: answer.siAppearances,
+      status: answer.status,
     },
   },
   matchReplay: {

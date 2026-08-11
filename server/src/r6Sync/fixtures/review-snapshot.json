@@ -1,0 +1,22 @@
+{
+  "provider": "liquipedia",
+  "dataVersion": "fixture-review-v1",
+  "generatedAt": "2026-08-04T00:00:00.000Z",
+  "fullSync": true,
+  "players": [
+    {
+      "sourceId": "fixture-review-player",
+      "nickname": "NeedsReview",
+      "nationality": "FR",
+      "region": "Europe",
+      "team": "Fixture Team",
+      "birthDate": "2000-01-01",
+      "roles": ["Unknown Role"],
+      "status": "active",
+      "sourceUrl": "https://liquipedia.net/rainbowsix/NeedsReview",
+      "sourceUpdatedAt": "2026-08-04T00:00:00.000Z",
+      "majorSiEventIds": ["major-fixture-1"],
+      "majorSiChampionshipEventIds": []
+    }
+  ]
+}

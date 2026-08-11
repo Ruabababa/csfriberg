@@ -1,186 +1,113 @@
-<div align="center">
+# SiegeGuess
 
-# 弗一把 (csgofriberg)
-
-**CS:GO / CS2 Major 选手猜测游戏 —— 类 Wordle 玩法 + 实时多人对战**
-
-[![CI and Docker](https://github.com/shnlfriberg/csgofriberg/actions/workflows/docker.yml/badge.svg)](https://github.com/shnlfriberg/csgofriberg/actions/workflows/docker.yml)
-[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![Node.js ≥ 22](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![pnpm workspaces](https://img.shields.io/badge/pnpm-workspaces-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![ghcr.io](https://img.shields.io/badge/ghcr.io-csgofriberg-2496ED?logo=docker&logoColor=white)](https://github.com/shnlfriberg/csgofriberg/pkgs/container/csgofriberg)
-
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![React 18](https://img.shields.io/badge/React_18-61DAFB?logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
-![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
-![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?logo=socketdotio&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-FF4438?logo=redis&logoColor=white)
-
-[玩法](#玩法) · [功能特性](#功能特性) · [快速开始](#快速开始) · [部署](#docker-生产部署) · [选手数据](#选手数据) · [贡献](#贡献)
-
-</div>
-
----
+Rainbow Six Siege 职业选手竞猜游戏，核心玩法类似 Wordle，并保留原项目的单人模式、实时多人对战、搜索、统计、回放、排行榜、公告和管理后台。
 
 ## 玩法
 
-输入选手昵称,系统按 **国家或地区 / 赛区 / 队伍 / 年龄 / 位置 / Major 冠军数 / Major 出场数 / 现役状态** 逐属性给出对比反馈:
+输入选手 ID 后，系统按以下九项给出对比反馈：
 
-- 🟩 **绿色** —— 该属性与答案完全一致
-- 🟨 **黄色** —— 接近(同赛区、数值相差不大)
-- ↑↓ **箭头** —— 数值型属性提示答案更高或更低
+- 国家或地区
+- 战队
+- 年龄
+- 位置
+- Major 参赛次数
+- Major 夺冠次数
+- Six Invitational 参赛次数
+- Six Invitational 夺冠次数
+- 现役状态
 
-8 次机会内猜出目标选手即获胜。
+绿色表示完全一致，黄色表示数值接近；年龄与四项赛事数值会用箭头提示答案更高或更低。8 次机会内猜出目标选手即获胜。一个选手可以有多个位置，位置集合完全一致为绿色、存在交集为黄色。爬虫缺失的资料显示为“未知”，未知值之间不会被判定为匹配。
 
-## 功能特性
+## 难度池
 
-- 🎮 **单人模式** —— 简单版(知名选手)/ 完整版(全部选手),进行中对局可断线续玩
-- 🌐 **多人联机** —— BO1/3/5/7 赛制、随机匹配、5 位房间码、观战;每小局限时 120 秒,断线即时通知、同身份可重连,30 秒未归判负
-- 🔍 **查选手** —— 模糊搜索选手资料
-- 📊 **统计与回放** / 🏆 **排行榜** / 📢 **公告**
-- 👤 **无需登录** —— 所有模式对匿名访客开放,战绩按浏览器本地标识记账,登录后自动并入账号
-- 🌏 **多语言** —— 简体中文 / English / 日本語;前后端交互仅传递错误码,文案统一在前端翻译
-- 🎨 **双主题** —— Blast 暗色 / 日间浅色,首次访问跟随系统偏好
-- 🛡 **PoW 人机验证** —— 公开接口由 WASM 工作量证明保护(Rust 编译,仓库内置预编译产物)
-- 🛠 **管理后台** —— 选手增删改、JSON 批量导入、外部 API Token、公告管理
+- `beginner`：当前前端唯一开放的难度，包含经冠军阵容核验的 Major 或 Six Invitational 冠军选手。
+- `easy`、`normal`：后端分池与接口继续保留，前端入口暂时关闭，供后续扩充题库时启用。
 
-## 技术栈
+知名选手名单使用 Liquipedia 稳定来源 ID，位于 `server/src/config/r6KnownPlayers.json`。昵称只用于显示，不作为同步主键。
 
-| 层        | 技术                                                     |
-| --------- | -------------------------------------------------------- |
-| 前端      | React 18 + Vite + TypeScript + React Router + Zustand    |
-| 后端      | Node.js + Express + TypeScript                           |
-| 数据库    | 本地开发支持 SQLite；生产 Docker 镜像固定使用 PostgreSQL |
-| 缓存/实时 | Redis + Socket.IO(Redis Adapter 跨实例广播)              |
-| 认证      | JWT + bcrypt(HttpOnly Cookie,客户端不存明文令牌)          |
-| 校验/测试 | Zod / Vitest                                             |
-| 包管理    | pnpm workspaces                                          |
+## 本地开发
 
-## 快速开始
-
-**环境要求**:Node.js ≥ 22、pnpm、Redis(本地开发可降级为内存模式)；SQLite 开箱即用,无需额外数据库。Rust 工具链可选——仅在需要重新编译 PoW WASM 时安装,默认使用仓库内置的预编译产物。
+要求 Node.js 22 或更高版本及 pnpm。SQLite 开箱即用；没有 Redis 时服务端会降级为仅适合单实例开发的内存模式。
 
 ```bash
 pnpm install
-cp .env.example .env                 # 可选,有默认值
-pnpm dev                             # server: 3000, client: 5173
+pnpm dev
 ```
 
-访问 http://localhost:5173 。公开注册的账号默认都是普通用户,创建或重置管理员:
+前端默认运行在 `http://localhost:5173`，服务端默认运行在 `http://localhost:3000`。
+
+常用命令：
 
 ```bash
-ADMIN_USERNAME=admin ADMIN_PASSWORD='至少12位强密码' pnpm create-admin
+pnpm test:local
+pnpm --filter server build
+pnpm --filter client build
+pnpm migrate
+pnpm create-admin
 ```
 
-### 运行时行为说明
+当前阶段的 `test:local` 只覆盖本地 SQLite、服务逻辑和前端组件，不运行 Redis、PostgreSQL、Socket.IO 房间、观战、断线恢复、跨实例广播或负载测试。
 
-- Redis 默认连接 `redis://127.0.0.1:6379`;生产环境建议 `REDIS_REQUIRED=true`,避免 Redis 故障时降级为仅适合单实例的内存模式
-- 生产环境强制要求 PostgreSQL、至少 32 字节随机 `JWT_SECRET` 和 `REDIS_REQUIRED=true`
-- 访客显示 ID 使用 HMAC-SHA256 派生,可用 `GUEST_ID_SALT` 配置独立盐(未配置时复用 `JWT_SECRET`)
-- 单人进行中的对局只保存在 Redis,**1800 秒(30 分钟)** 无有效操作自动过期;猜中、次数耗尽或查看答案后才写入数据库,主动离开或重新开始只清理临时状态、不产生历史战绩
+## R6 选手数据
 
-## 常用脚本
+内置题库由 `D:\LiquipediaScraping\exports\major_si_champions.md` 与 `D:\LiquipediaScraping\data\verified_champion_rosters.json` 核验，共 81 名 Major 或 Six Invitational 冠军选手。选手详细字段来自同一次爬虫导出的 `players_major_si.json`，项目保留独立的 Major/SI 参赛与夺冠次数。
 
-| 命令                | 说明                                    |
-| ------------------- | --------------------------------------- |
-| `pnpm dev`          | 同时启动前后端开发服务                  |
-| `pnpm build`        | 构建 PoW WASM + 前端 + 编译后端         |
-| `pnpm start`        | 生产模式启动(server 托管 client/dist)   |
-| `pnpm test`         | 运行前后端测试                          |
-| `pnpm migrate`      | 初始化数据库结构 + 种子选手             |
-| `pnpm seed`         | 补充 5 名基础种子选手中缺失的选手       |
-| `pnpm create-admin` | 显式创建或重置管理员                    |
-| `pnpm loadtest`     | 运行 HTTP 缓存接口与多人建房负载测试    |
-
-## 切换 PostgreSQL
-
-修改根目录 `.env`:
-
-```
-DB_CLIENT=pg
-DB_URL=postgres://user:pass@localhost:5432/csgofriberg
-```
-
-## Redis 用途
-
-<details>
-<summary>展开查看</summary>
-
-- HTTP 与 Socket.IO 分布式限流
-- HttpOnly Cookie 会话、实时角色校验和匿名身份签名绑定
-- `/api/players/list` 版本化缓存、ETag 与跨实例失效通知
-- 排行榜、公告等热点查询缓存
-- 多人房间快照、身份索引、分布式房间锁和匹配队列
-- 回合超时、断线判负和房间清理的可恢复调度
-- Socket.IO Redis Adapter 跨实例广播
-- Redis Stream 多人战绩持久化重试
-
-</details>
-
-## Docker 生产部署
-
-生产环境使用 PostgreSQL 专用的精简 Docker 镜像(distroless 运行时,不含 Rust、pnpm、TypeScript、Vite、源码、测试与 SQLite 驱动)。GitHub Actions 自动执行测试、前后端编译、`linux/amd64` 镜像构建并发布到 [`ghcr.io/shnlfriberg/csgofriberg`](https://github.com/shnlfriberg/csgofriberg/pkgs/container/csgofriberg)。
-
-Docker Compose 部署、自动数据库迁移、管理员创建、更新和回滚方法见 [`deploy/README.md`](deploy/README.md)。
-
-## 选手数据
-
-选手数据集独立维护在 [**shnlfriberg/csgo-major-db**](https://github.com/shnlfriberg/csgo-major-db):646 名 CS Major 选手的 `players.json`,可直接通过管理后台批量导入,每次提交自动校验格式合法性。数据纠错与新增选手请到该仓库[提交 issue](https://github.com/shnlfriberg/csgo-major-db/issues/new/choose)。
-
-### 外部选手更新 API
-
-管理员可在管理后台的 **API Token** 页生成最长 365 天有效的 Bearer Token。明文只在创建时返回一次，服务端仅保存 SHA-256 哈希；每位管理员最多保留 20 个有效 Token，撤销后立即失效。
-
-外部 API 不需要浏览器 PoW，但保留全局限流与独立的失效关闭限流。请求统一携带：
-
-```http
-Authorization: Bearer csgf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-Content-Type: application/json
-```
-
-可用端点：
-
-- `POST /api/external/players`：新增单个选手，body 与管理后台新增选手格式相同。
-- `PUT /api/external/players/:id`：部分更新选手，只传需要修改的字段。
-- `POST /api/external/players/import`：按昵称批量 upsert，body 为 `{ "players": [...] }`，单次最多 1000 名。
-
-示例：
+更新爬虫数据后，先用上述两份冠军来源核对名单，再从同批次 `players_major_si.json` 筛选冠军记录并覆盖 `server/src/db/seeds/players.json`，最后执行：
 
 ```bash
-curl -X PUT 'https://example.com/api/external/players/123' \
-  -H 'Authorization: Bearer csgf_your_token' \
-  -H 'Content-Type: application/json' \
-  -d '{"team":"NAVI","age":27,"difficulties":["normal","easy"]}'
+pnpm migrate
+pnpm seed
 ```
 
-外部 API 不提供永久删除；同步源可将 `is_enabled` 设为 `false`，使选手立即退出目标池与猜测列表，同时保留历史对局。
+旧的官方 API 快照同步工具仍保留用于后续数据源迁移：
 
-## 项目结构
+正式数据来源为 Liquipedia 官方数据 API。应用运行时不会请求 Liquipedia，也不包含网页爬虫。API 审批期间使用本地快照完成标准化、审核和导入逻辑。
 
-```
-server/src
-├── config.ts          # 环境配置
-├── db/                # Knex 实例、建表、种子数据
-├── middleware/        # 认证、Zod 校验、限流、PoW、错误处理
-├── routes/            # auth / players / game / stats / leaderboard / announcements / admin
-├── services/          # 游戏判定、选手缓存、房间状态、战绩队列等
-└── socket/            # 多人房间系统
-client/src
-├── api/               # axios 封装、socket 单例、玩家列表缓存
-├── store/             # auth / theme / guest 等轻量状态
-├── i18n/              # 中 / 英 / 日 文案与错误码翻译
-├── components/        # Page / GuessBoard / GuessInputBar / DataTable / admin/*
-└── pages/             # Home / SingleGame / MultiLobby / MultiRoom / Stats / ...
+默认命令只生成产物，不修改数据库：
+
+```bash
+pnpm r6:sync --source snapshot --snapshot server/src/r6Sync/fixtures/snapshot.json
 ```
 
-## 贡献
+产物写入被 Git 忽略的 `server/data/r6-sync/<timestamp>/`：
 
-- 🐛 [问题反馈 / 功能建议](https://github.com/shnlfriberg/csgofriberg/issues/new/choose) —— 请使用对应的 issue 模板
-- 📊 选手数据问题请前往 [csgo-major-db](https://github.com/shnlfriberg/csgo-major-db/issues/new/choose)
-- 提交 PR 前请运行 `pnpm test` 与 `pnpm build`;所有用户可见文案需同步维护中/英/日三语(`client/src/i18n/resources.ts`)
+- `snapshot.json`：原始输入快照。
+- `normalized.json`：通过标准化和校验、可进入选手池的记录。
+- `review.json`：待人工审核或被拒绝的记录及原因。
+- `summary.json`：接纳、审核、拒绝以及 apply 后的新增、更新、停用统计。
 
-## 许可证
+确认 `review.json` 为空后，显式加 `--apply` 才会事务性写入当前配置的数据库：
+
+```bash
+pnpm r6:sync --source snapshot --snapshot path/to/snapshot.json --apply
+```
+
+完整同步会停用本次消失的 Liquipedia 选手，并在首次正式导入时停用没有官方来源 ID 的旧选手；历史对局不会删除。部分同步不会自动停用未出现在快照中的选手。
+
+API 获批后只需实现真实传输适配器；快照结构、标准化、审核、难度分池和数据库导入保持不变。详细说明见 [R6_API_SYNC.md](docs/R6_API_SYNC.md)、[R6_DATA_POLICY.md](docs/R6_DATA_POLICY.md) 和 [R6_ROLLOUT.md](docs/R6_ROLLOUT.md)。
+
+## 数据模型
+
+官方选手使用 `source_provider + source_player_id` 作为同步身份，允许出现相同昵称。公共自动补全会显示“昵称 · 队伍 · 国家或地区”，提交使用选手 ID。
+
+游戏统一读写独立的 `major_championships`、`major_appearances`、`si_championships`、`si_appearances` 和 `roles`。`major_si_*` 合计字段只用于兼容旧管理接口和历史数据。
+
+国家或地区保存稳定代码，由前端翻译；赛区保存 R6 顶层赛区值。出生日期、来源页面、数据版本、更新时间及 Major/SI 赛事 ID 会完整保留并可从管理后台导出。
+
+## 技术栈
+
+- 前端：React 18、Vite、TypeScript、React Router、Zustand、i18next。
+- 后端：Node.js、Express、TypeScript、Knex、Zod。
+- 数据库：本地 SQLite，生产 PostgreSQL。
+- 缓存与实时通信：Redis、Socket.IO。
+- 测试：Vitest、Testing Library。
+
+## 部署
+
+生产环境要求 PostgreSQL、Redis、至少 32 字节的随机 `JWT_SECRET`，并应使用独立 `GUEST_ID_SALT`。Docker Compose、迁移、滚动更新和回滚步骤见 [deploy/README.md](deploy/README.md)。
+
+为避免破坏既有会话，Cookie、localStorage、PoW 算法名及 Redis 前缀暂时保留原内部标识。这些名称不影响 SiegeGuess 的 R6 玩法或显示内容。
+
+## 许可
 
 本项目基于 [AGPL-3.0](LICENSE) 开源。

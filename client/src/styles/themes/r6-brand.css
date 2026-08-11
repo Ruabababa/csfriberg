@@ -1,0 +1,355 @@
+/* R6 Siege Guess brand layer
+   A calm tactical-intelligence language: graphite surfaces, amber actions,
+   cyan telemetry, and crisp borders. Loaded after the legacy theme sheets so
+   the existing theme switcher and page components keep working. */
+:root {
+  --r6-navy: #08131f;
+  --r6-ink: #0d1d2b;
+  --r6-panel: #122638;
+  --r6-panel-soft: #172d40;
+  --r6-line: rgba(165, 201, 214, 0.18);
+  --r6-line-strong: rgba(242, 140, 40, 0.58);
+  --r6-amber: #f28c28;
+  --r6-amber-bright: #ffad4e;
+  --r6-cyan: #58c7bd;
+  --r6-cyan-soft: rgba(88, 199, 189, 0.14);
+  --r6-paper: #f4f7f6;
+  --r6-paper-panel: #ffffff;
+  --r6-paper-line: rgba(12, 38, 55, 0.15);
+  --r6-paper-muted: #5c6f7a;
+}
+
+html[data-theme='blast'] {
+  --bg: var(--r6-navy);
+  --card: var(--r6-panel);
+  --card-soft: var(--r6-panel-soft);
+  --border: var(--r6-line);
+  --border-strong: var(--r6-line-strong);
+  --text: #edf5f5;
+  --text-sec: #b4c8ce;
+  --text-light: #78909b;
+  --input-bg: #0b1b29;
+  --primary: var(--r6-amber);
+  --primary-hover: var(--r6-amber-bright);
+  --primary-soft: rgba(242, 140, 40, 0.14);
+  --primary-strong: #ffc273;
+  --success: #59c69b;
+  --warning: #f0b44e;
+  --danger: #ef6d70;
+  --accent: var(--r6-cyan);
+  --correct: #329f7d;
+  --close: #bc7b30;
+  --wrong: #476171;
+  --shadow: 0 18px 42px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.46);
+  --radius: 6px;
+  --radius-sm: 4px;
+  color-scheme: dark;
+}
+
+html:not([data-theme='blast']) {
+  --bg: var(--r6-paper);
+  --card: var(--r6-paper-panel);
+  --card-soft: #edf3f3;
+  --border: var(--r6-paper-line);
+  --border-strong: rgba(242, 140, 40, 0.5);
+  --text: #102b3b;
+  --text-sec: #526a76;
+  --text-light: var(--r6-paper-muted);
+  --input-bg: #ffffff;
+  --primary: #d97016;
+  --primary-hover: #bd5f0e;
+  --primary-soft: rgba(217, 112, 22, 0.12);
+  --primary-strong: #a54d08;
+  --success: #1b8b68;
+  --warning: #ae6a11;
+  --danger: #c94e58;
+  --accent: #167e84;
+  --correct: #25936f;
+  --close: #b97824;
+  --wrong: #8a9aa0;
+  --shadow: 0 14px 34px rgba(13, 40, 54, 0.09);
+  --shadow-lg: 0 24px 64px rgba(13, 40, 54, 0.18);
+  --radius: 6px;
+  --radius-sm: 4px;
+  color-scheme: light;
+}
+
+html[data-theme='blast'] body {
+  background: var(--r6-navy);
+}
+
+html:not([data-theme='blast']) body {
+  background: var(--r6-paper);
+}
+
+body::before,
+html:not([data-theme='blast']) body::before { display: none; }
+
+.page { background: transparent; }
+.page-scroll {
+  background-image:
+    linear-gradient(rgba(88, 199, 189, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88, 199, 189, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.header-bar {
+  min-height: 64px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(14px);
+}
+.header-bar::after { height: 2px; width: 72px; background: var(--r6-amber); box-shadow: none; animation: none; }
+.header-bar .title {
+  color: var(--text);
+  font-family: 'Aptos Display', 'Segoe UI', sans-serif;
+  font-style: normal;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.header-bar .title::before { display: none; }
+.home-brand { gap: 10px; }
+.home-brand-slashes { display: none; }
+.home-brand-logo {
+  width: 34px; height: 34px; flex-basis: 34px;
+  border: 1px solid var(--r6-amber);
+  border-radius: 5px;
+  background: var(--r6-amber);
+  color: #10212b;
+  font-family: 'Aptos Display', 'Segoe UI', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: none;
+}
+.btn {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: var(--primary);
+  color: #11212a;
+  box-shadow: none;
+  clip-path: none;
+  font-family: 'Aptos', 'Segoe UI', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+.btn::after { display: none; }
+.btn:hover:not(:disabled) { background: var(--primary-hover); color: #10212b; box-shadow: 0 5px 16px color-mix(in srgb, var(--primary) 24%, transparent); }
+.btn-ghost { border-color: var(--border); background: transparent; color: var(--text-sec); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--r6-cyan); background: var(--r6-cyan-soft); color: var(--text); }
+.btn-success, .btn-green { background: var(--success); color: #07251c; }
+.btn-warning { background: var(--warning); color: #2b1d08; }
+.btn-danger, .btn-red { background: var(--danger); color: #fff; }
+.btn-accent { background: var(--accent); color: #07252a; }
+.btn-bilibili { background: #3baec7; color: #06232b; }
+.btn-github { background: #294454; color: #eef8f8; }
+
+.card,
+.menu-card,
+.presence-item,
+.overlay-card,
+.confirm-dialog,
+.replay-dialog,
+.admin-player-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.card::before { width: 42px; height: 2px; background: var(--r6-amber); box-shadow: none; animation: none; }
+.input, select.input, textarea.input { border-radius: 4px; border-color: var(--border); background: var(--input-bg); }
+.input:focus { border-color: var(--r6-cyan); box-shadow: 0 0 0 3px var(--r6-cyan-soft); }
+.game-table-wrap { border-radius: var(--radius); border-color: var(--border); background: var(--card-soft); }
+.game-table th { background: var(--card-soft); color: var(--r6-cyan); letter-spacing: 0.02em; }
+.game-table td { border-radius: 4px; box-shadow: none; }
+
+/* Landing dashboard */
+.home-page .page-scroll { gap: 0; padding-top: clamp(18px, 3vw, 32px); }
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: stretch;
+  min-height: 350px;
+  padding: clamp(28px, 5vw, 56px);
+  gap: clamp(24px, 5vw, 72px);
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  clip-path: none;
+}
+.home-hero::before,
+.home-hero::after { display: none; }
+.home-hero-copy { align-self: center; max-width: 660px; }
+.hero-kicker {
+  display: inline-flex;
+  margin-bottom: 18px;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--r6-cyan) 42%, transparent);
+  border-left: 3px solid var(--r6-cyan);
+  color: var(--r6-cyan);
+  font-family: Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.home-hero h1 {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-family: 'Aptos Display', 'Segoe UI', sans-serif;
+  font-size: clamp(3.2rem, 8vw, 6.5rem);
+  font-style: normal;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  text-shadow: none;
+  transform: none;
+}
+.home-hero h1::after { content: '.'; color: var(--r6-amber); }
+.home-hero .hero-subtitle { max-width: 560px; color: var(--text-sec); font-size: clamp(1rem, 2vw, 1.18rem); font-weight: 500; line-height: 1.6; }
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.hero-actions .game-rules-trigger { margin: 0; }
+.home-sponsor-link { margin: 16px 0 0; color: var(--text-light); font-size: 0.76rem; }
+.home-sponsor-link:hover, .home-sponsor-link:focus-visible { color: var(--r6-cyan); }
+.home-hero-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--r6-cyan) 8%, transparent), transparent 58%),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(88,199,189,0.08) 31px 32px),
+    repeating-linear-gradient(90deg, transparent 0 31px, rgba(88,199,189,0.08) 31px 32px),
+    var(--r6-ink);
+}
+.home-hero-visual::before,
+.home-hero-visual::after { position: absolute; content: ''; border: 1px solid rgba(88,199,189,0.26); border-radius: 50%; }
+.home-hero-visual::before { width: 230px; height: 230px; }
+.home-hero-visual::after { width: 140px; height: 140px; border-color: rgba(242,140,40,0.46); }
+.r6-signal { position: relative; z-index: 1; display: grid; place-items: center; width: 116px; height: 116px; border: 1px solid var(--r6-amber); border-radius: 50%; background: color-mix(in srgb, var(--r6-amber) 11%, transparent); color: var(--r6-amber-bright); font-family: 'Aptos Display', sans-serif; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.08em; }
+.r6-signal::after { position: absolute; inset: 14px; content: ''; border: 1px dashed rgba(242,140,40,0.56); border-radius: 50%; }
+.r6-telemetry { position: absolute; z-index: 2; display: grid; gap: 6px; width: 112px; padding: 9px; border: 1px solid var(--border); background: color-mix(in srgb, var(--r6-ink) 88%, transparent); color: var(--text-sec); font: 0.62rem/1.2 Consolas, monospace; letter-spacing: 0.08em; }
+.r6-telemetry strong { color: var(--r6-cyan); font-size: 0.76rem; }
+.r6-telemetry-top { top: 18px; right: 18px; }
+.r6-telemetry-bottom { bottom: 18px; left: 18px; }
+.menu-grid { max-width: none; padding: 22px 0; gap: 12px; }
+.menu-card { min-height: 164px; align-items: flex-start; justify-content: flex-start; padding: 22px; gap: 15px; background: var(--card); }
+.menu-card::before { height: 3px; background: var(--menu-color, var(--r6-amber)); box-shadow: none; }
+.menu-card::after { display: none; }
+.menu-card:hover { border-color: var(--menu-color, var(--r6-amber)); background: color-mix(in srgb, var(--card) 88%, var(--menu-color, var(--r6-amber))); box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.menu-card .menu-icon { width: 44px; height: 44px; border: 1px solid color-mix(in srgb, var(--menu-color, var(--r6-amber)) 58%, transparent); border-radius: 5px; background: color-mix(in srgb, var(--menu-color, var(--r6-amber)) 14%, transparent); color: var(--menu-color, var(--r6-amber)); box-shadow: none; transform: none; }
+.menu-card .menu-label { color: var(--text); font-family: 'Aptos', 'Segoe UI', sans-serif; font-size: 1.05rem; font-style: normal; font-weight: 750; letter-spacing: 0.01em; }
+.menu-description { color: var(--text-sec); font-size: 0.84rem; }
+.menu-arrow { right: 18px; bottom: 17px; color: var(--menu-color, var(--r6-amber)); }
+.bottom-bar { justify-content: flex-start; padding-bottom: clamp(24px, 5vh, 46px); }
+.bottom-bar .btn { min-height: 36px; border-color: var(--border); font-size: 0.84rem; }
+
+@media (max-width: 780px) {
+  .home-hero { grid-template-columns: 1fr; gap: 22px; }
+  .home-hero-copy { max-width: none; }
+  .home-hero-visual { min-height: 190px; }
+  .r6-signal { width: 94px; height: 94px; font-size: 2.15rem; }
+}
+@media (max-width: 560px) {
+  .home-hero { min-height: 0; padding: 24px 18px; }
+  .home-hero h1 { font-size: clamp(3rem, 16vw, 4.5rem); }
+  .hero-actions { margin-top: 18px; }
+  .menu-grid { grid-template-columns: 1fr; padding-block: 14px; }
+  .menu-grid .menu-card:last-child { grid-column: auto; width: auto; }
+  .menu-card { min-height: 128px; padding: 18px; }
+  .home-hero-visual { min-height: 170px; }
+  .r6-telemetry { transform: scale(0.88); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* The legacy light sheet scopes its rules to html:not(...), so keep the
+   landing overrides equally specific in both modes. */
+html[data-theme='blast'] .btn,
+html:not([data-theme='blast']) .btn { border-radius: 4px; clip-path: none; box-shadow: none; text-transform: none; }
+html[data-theme='blast'] .btn::after,
+html:not([data-theme='blast']) .btn::after { display: none; }
+html[data-theme='blast'] .home-hero,
+html:not([data-theme='blast']) .home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: stretch;
+  min-height: 0;
+  height: auto;
+  padding: clamp(28px, 5vw, 56px);
+  gap: clamp(24px, 5vw, 72px);
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  clip-path: none;
+  transform: none;
+  animation: none;
+  flex-shrink: 0;
+}
+html[data-theme='blast'] .home-hero::before,
+html[data-theme='blast'] .home-hero::after,
+html:not([data-theme='blast']) .home-hero::before,
+html:not([data-theme='blast']) .home-hero::after { display: none; }
+html[data-theme='blast'] .home-hero-copy,
+html:not([data-theme='blast']) .home-hero-copy { align-self: center; max-width: 660px; }
+html[data-theme='blast'] .home-hero h1,
+html:not([data-theme='blast']) .home-hero h1 {
+  margin: 0 0 14px;
+  color: var(--text);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  font-family: 'Aptos Display', 'Segoe UI', sans-serif;
+  font-size: clamp(3.2rem, 8vw, 6.5rem);
+  font-style: normal;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  text-shadow: none;
+  transform: none;
+  animation: none;
+}
+html[data-theme='blast'] .home-hero .hero-subtitle,
+html:not([data-theme='blast']) .home-hero .hero-subtitle { max-width: 560px; color: var(--text-sec); font-size: clamp(1rem, 2vw, 1.18rem); font-weight: 500; line-height: 1.6; }
+html[data-theme='blast'] .home-hero-visual,
+html:not([data-theme='blast']) .home-hero-visual { min-height: 260px; }
+html[data-theme='blast'] .menu-card,
+html:not([data-theme='blast']) .menu-card {
+  min-height: 164px;
+  padding: 22px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 15px;
+  border-radius: var(--radius);
+  background: var(--card);
+  clip-path: none;
+  transform: none;
+}
+html[data-theme='blast'] .menu-card .menu-icon,
+html:not([data-theme='blast']) .menu-card .menu-icon { border-radius: 5px; transform: none; box-shadow: none; }
+html[data-theme='blast'] .menu-card .menu-label,
+html:not([data-theme='blast']) .menu-card .menu-label { color: var(--text); font-style: normal; }
+
+@media (max-width: 780px) {
+  html[data-theme='blast'] .home-hero,
+  html:not([data-theme='blast']) .home-hero { grid-template-columns: 1fr; gap: 22px; }
+}
+@media (max-width: 560px) {
+  html[data-theme='blast'] .home-hero,
+  html:not([data-theme='blast']) .home-hero { min-height: 0; padding: 24px 18px; }
+  html[data-theme='blast'] .home-hero h1,
+  html:not([data-theme='blast']) .home-hero h1 { font-size: clamp(3rem, 16vw, 4.5rem); }
+  html[data-theme='blast'] .menu-card,
+  html:not([data-theme='blast']) .menu-card { min-height: 128px; padding: 18px; }
+}

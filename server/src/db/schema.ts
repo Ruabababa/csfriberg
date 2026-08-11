@@ -9,6 +9,63 @@ const USER_DISPLAY_ID_BACKFILL_BATCH_SIZE = 1000;
 const PLAYER_DIFFICULTIES_BACKFILL_MIGRATION = '20260724-player-difficulties-backfill';
 const MULTI_WINNING_GUESSES_BACKFILL_MIGRATION = '20260729-multi-winning-guesses-backfill';
 const MULTI_WINNING_GUESSES_BACKFILL_BATCH_SIZE = 200;
+const R6_PLAYER_FIELDS_MIGRATION = '20260801-r6-player-fields-v1';
+const R6_SOURCE_IDENTITY_MIGRATION = '20260804-r6-source-identity-v1';
+const R6_SCRAPER_FIELDS_MIGRATION = '20260809-r6-scraper-fields-v1';
+
+async function migrateR6ScraperFields(instance: Knex): Promise<void> {
+  const applied = await instance('app_migrations')
+    .where({ name: R6_SCRAPER_FIELDS_MIGRATION })
+    .first();
+  if (applied) return;
+
+  if (instance.client.config.client === 'pg') {
+    await instance.raw('alter table "players" alter column "age" drop not null');
+  } else {
+    await instance.schema.alterTable('players', (table) => {
+      table.integer('age').nullable().alter();
+    });
+  }
+  await instance('players')
+    .whereNull('status_raw')
+    .update({ status_raw: instance.raw("case when is_active then 'Active' else 'Retired' end") });
+  await instance('app_migrations').insert({ name: R6_SCRAPER_FIELDS_MIGRATION });
+}
+
+async function hasNicknameUniqueConstraint(instance: Knex): Promise<boolean> {
+  if (instance.client.config.client === 'pg') {
+    const row = await instance('information_schema.table_constraints')
+      .where({
+        table_name: 'players',
+        constraint_name: 'players_nickname_unique',
+        constraint_type: 'UNIQUE',
+      })
+      .first();
+    return Boolean(row);
+  }
+  const rows = await instance.raw('pragma index_list("players")');
+  return (rows as Array<{ name?: string }>).some((row) => row.name === 'players_nickname_unique');
+}
+
+async function migrateR6SourceIdentity(instance: Knex): Promise<void> {
+  const applied = await instance('app_migrations')
+    .where({ name: R6_SOURCE_IDENTITY_MIGRATION })
+    .first();
+  if (applied) return;
+
+  if (await hasNicknameUniqueConstraint(instance)) {
+    await instance.schema.alterTable('players', (table) => {
+      table.dropUnique(['nickname'], 'players_nickname_unique');
+    });
+  }
+  await instance.raw(
+    'create unique index if not exists "players_source_identity_unique" on "players" ("source_provider", "source_player_id")'
+  );
+  await instance('app_migrations')
+    .insert({ name: R6_SOURCE_IDENTITY_MIGRATION })
+    .onConflict('name')
+    .ignore();
+}
 
 export async function backfillLegacyPlayerDifficulties(instance: Knex = db): Promise<void> {
   if (!(await instance.schema.hasColumn('players', 'is_easy'))) return;
@@ -142,6 +199,47 @@ async function backfillMultiWinningGuesses(instance: Knex): Promise<void> {
     .ignore();
 }
 
+/**
+ * Adds the R6-specific player contract without dropping the CS-era columns.
+ * The old columns remain available for historical imports and replay data;
+ * the cache layer exposes both names while the rest of the application moves
+ * to the canonical major_si_* fields.
+ */
+async function backfillR6PlayerFields(instance: Knex): Promise<void> {
+  const applied = await instance('app_migrations')
+    .where({ name: R6_PLAYER_FIELDS_MIGRATION })
+    .first();
+  if (applied) return;
+
+  const players = await instance('players').select(
+    'id',
+    'role',
+    'major_championships',
+    'major_appearances',
+    'major_si_championships',
+    'major_si_appearances',
+    'roles',
+    'major_si_event_ids',
+    'major_si_championship_event_ids'
+  );
+  await instance.transaction(async (trx) => {
+    for (const player of players) {
+      const role = String(player.role ?? '').trim();
+      await trx('players').where({ id: player.id }).update({
+        major_si_championships: player.major_si_championships ?? player.major_championships ?? 0,
+        major_si_appearances: player.major_si_appearances ?? player.major_appearances ?? 0,
+        roles: player.roles ?? JSON.stringify(role ? [role] : []),
+        major_si_event_ids: player.major_si_event_ids ?? '[]',
+        major_si_championship_event_ids: player.major_si_championship_event_ids ?? '[]',
+      });
+    }
+    await trx('app_migrations')
+      .insert({ name: R6_PLAYER_FIELDS_MIGRATION })
+      .onConflict('name')
+      .ignore();
+  });
+}
+
 export async function ensureSchema(instance: Knex = db): Promise<void> {
   if (!(await instance.schema.hasTable('users'))) {
     await instance.schema.createTable('users', (t) => {
@@ -208,14 +306,28 @@ export async function ensureSchema(instance: Knex = db): Promise<void> {
   if (!(await instance.schema.hasTable('players'))) {
     await instance.schema.createTable('players', (t) => {
       t.increments('id').primary();
-      t.string('nickname', 64).notNullable().unique();
+      t.string('nickname', 64).notNullable();
       t.string('nationality', 64).notNullable();
       t.string('region', 32).notNullable().defaultTo('');
       t.string('team', 64).notNullable().defaultTo('');
-      t.integer('age').notNullable();
-      t.string('role', 32).notNullable().defaultTo('Rifler');
+      t.integer('age').nullable();
+      t.string('role', 64).notNullable().defaultTo('Entry');
       t.integer('major_championships').notNullable().defaultTo(0);
       t.integer('major_appearances').notNullable().defaultTo(0);
+      t.integer('si_championships').notNullable().defaultTo(0);
+      t.integer('si_appearances').notNullable().defaultTo(0);
+      t.string('status_raw', 32).nullable();
+      t.integer('major_si_championships').nullable();
+      t.integer('major_si_appearances').nullable();
+      t.text('roles').nullable();
+      t.date('birth_date').nullable();
+      t.text('source_url').nullable();
+      t.string('source_provider', 32).nullable();
+      t.string('source_player_id', 256).nullable();
+      t.timestamp('source_updated_at').nullable();
+      t.string('data_version', 64).nullable();
+      t.text('major_si_event_ids').nullable();
+      t.text('major_si_championship_event_ids').nullable();
       t.boolean('is_active').notNullable().defaultTo(true);
       t.boolean('is_enabled').notNullable().defaultTo(true);
       t.timestamp('created_at').notNullable().defaultTo(instance.fn.now());
@@ -240,11 +352,8 @@ export async function ensureSchema(instance: Knex = db): Promise<void> {
       await instance('players').where({ id: player.id }).update({ age });
     }
   }
-  const missingPlayerAge = await instance('players').whereNull('age').first('id');
-  if (missingPlayerAge) throw new Error(`MISSING_PLAYER_AGE:${missingPlayerAge.id}`);
-  if (!hasPlayerAge || hasPlayerBirthYear) {
+  if (hasPlayerBirthYear) {
     await instance.schema.alterTable('players', (t) => {
-      t.integer('age').notNullable().alter();
       if (hasPlayerBirthYear) t.dropColumn('birth_year');
     });
   }
@@ -253,6 +362,30 @@ export async function ensureSchema(instance: Knex = db): Promise<void> {
       t.integer('major_championships').notNullable().defaultTo(0);
     });
   }
+  const r6PlayerColumns: Array<[string, (table: Knex.CreateTableBuilder) => void]> = [
+    ['major_si_championships', (table) => table.integer('major_si_championships').nullable()],
+    ['major_si_appearances', (table) => table.integer('major_si_appearances').nullable()],
+    ['si_championships', (table) => table.integer('si_championships').notNullable().defaultTo(0)],
+    ['si_appearances', (table) => table.integer('si_appearances').notNullable().defaultTo(0)],
+    ['status_raw', (table) => table.string('status_raw', 32).nullable()],
+    ['roles', (table) => table.text('roles').nullable()],
+    ['birth_date', (table) => table.date('birth_date').nullable()],
+    ['source_url', (table) => table.text('source_url').nullable()],
+    ['source_provider', (table) => table.string('source_provider', 32).nullable()],
+    ['source_player_id', (table) => table.string('source_player_id', 256).nullable()],
+    ['source_updated_at', (table) => table.timestamp('source_updated_at').nullable()],
+    ['data_version', (table) => table.string('data_version', 64).nullable()],
+    ['major_si_event_ids', (table) => table.text('major_si_event_ids').nullable()],
+    ['major_si_championship_event_ids', (table) => table.text('major_si_championship_event_ids').nullable()],
+  ];
+  for (const [column, addColumn] of r6PlayerColumns) {
+    if (!(await instance.schema.hasColumn('players', column))) {
+      await instance.schema.alterTable('players', addColumn);
+    }
+  }
+  await migrateR6ScraperFields(instance);
+  await backfillR6PlayerFields(instance);
+  await migrateR6SourceIdentity(instance);
   if (!(await instance.schema.hasColumn('players', 'is_enabled'))) {
     await instance.schema.alterTable('players', (t) => {
       t.boolean('is_enabled').notNullable().defaultTo(true);

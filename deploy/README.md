@@ -7,7 +7,8 @@ ghcr.io/shnlfriberg/csgofriberg
 ```
 
 运行镜像基于 distroless Node.js，仅包含生产 Node 依赖、编译后的服务端
-JavaScript、编译后的前端资源以及输出到 `server/dist` 的选手种子文件。镜像中
+JavaScript 和编译后的前端资源。镜像不捆绑正式选手数据；选手数据应由经过审核的
+R6 官方 API 同步产物导入。镜像中
 不包含 pnpm、Rust、TypeScript、Vite、源码、测试、构建工具和 SQLite 驱动。
 
 自带的 Compose 编排会运行两个应用实例、PostgreSQL 和 Redis。反向代理与 TLS
@@ -92,8 +93,8 @@ docker compose logs -f app-1 app-2
 echo "$GHCR_TOKEN" | docker login ghcr.io -u GITHUB_USERNAME --password-stdin
 ```
 
-Compose 会先运行一次性的 `migrate` 服务：它负责创建或更新表和索引，并且
-仅在选手表为空时导入内置的选手种子数据。迁移未成功退出前，两个应用实例都
+Compose 会先运行一次性的 `migrate` 服务：它只负责创建或更新表和索引，不会
+创建或导入正式选手数据。首次部署应另行执行经过审核的 R6 数据同步导入。迁移未成功退出前，两个应用实例都
 不会启动。应用启动时只做只读的表结构就绪检查；表结构变更完全由迁移服务
 负责，因此两个实例不会并发执行 DDL。
 

@@ -8,6 +8,7 @@ import DifficultyMultiSelect from './DifficultyMultiSelect';
 import {
   COUNTRY_OPTIONS,
   REGION_OPTIONS,
+  canonicalCountryValue,
   canonicalRegionValue,
   countryLabel,
   isKnownCountry,
@@ -23,8 +24,17 @@ export interface PlayerForm {
   team: string;
   age: number;
   role: string;
-  major_championships: number;
-  major_appearances: number;
+  roles: string[];
+  major_si_championships: number;
+  major_si_appearances: number;
+  birth_date: string | null;
+  source_url: string | null;
+  source_provider: 'liquipedia' | null;
+  source_player_id: string | null;
+  source_updated_at: string | null;
+  data_version: string | null;
+  major_si_event_ids: string[];
+  major_si_championship_event_ids: string[];
   difficulties: string[];
   is_active: boolean;
   is_enabled: boolean;
@@ -36,9 +46,18 @@ export const emptyPlayer: PlayerForm = {
   region: '',
   team: '',
   age: 25,
-  role: 'Rifler',
-  major_championships: 0,
-  major_appearances: 0,
+  role: 'Entry',
+  roles: ['Entry'],
+  major_si_championships: 0,
+  major_si_appearances: 0,
+  birth_date: null,
+  source_url: null,
+  source_provider: null,
+  source_player_id: null,
+  source_updated_at: null,
+  data_version: null,
+  major_si_event_ids: [],
+  major_si_championship_event_ids: [],
   difficulties: ['normal'],
   is_active: true,
   is_enabled: true,
@@ -55,7 +74,9 @@ export default function PlayerEditForm({ initial, difficultyKeys, onSubmit, onCa
   const { t } = useTranslation();
   const [form, setForm] = useState<PlayerForm>(() => ({
     ...initial,
+    nationality: canonicalCountryValue(initial.nationality),
     region: canonicalRegionValue(initial.region),
+    roles: initial.roles?.length ? initial.roles : [initial.role],
   }));
   const [saving, setSaving] = useState(false);
   const titleId = useId();
@@ -85,7 +106,7 @@ export default function PlayerEditForm({ initial, difficultyKeys, onSubmit, onCa
     event.preventDefault();
     setSaving(true);
     try {
-      await onSubmit(form);
+      await onSubmit({ ...form, role: form.roles[0] ?? form.role });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('admin.saveFailed'));
     } finally {
@@ -150,21 +171,54 @@ export default function PlayerEditForm({ initial, difficultyKeys, onSubmit, onCa
               <span>{t('admin.ageRequired')}</span>
               <input className="input" type="number" min="10" max="100" value={form.age} onChange={(event) => set({ age: Number(event.target.value) })} required />
             </label>
-            <label className="admin-player-field">
-              <span>{t('admin.playerRole')}</span>
-              <select className="input" value={form.role} onChange={(event) => set({ role: event.target.value })}>
-                {PLAYER_ROLE_OPTIONS.map(({ value, labelKey }) => <option key={value} value={value}>{t(labelKey)}</option>)}
-              </select>
-            </label>
+            <fieldset className="admin-player-field admin-player-role-field">
+              <legend>{t('admin.playerRole')}</legend>
+              <div className="admin-player-role-options">
+                {PLAYER_ROLE_OPTIONS.map(({ value, labelKey }) => (
+                  <label key={value}>
+                    <input
+                      type="checkbox"
+                      checked={form.roles.includes(value)}
+                      onChange={(event) => {
+                        const roles = event.target.checked
+                          ? [...new Set([...form.roles, value])]
+                          : form.roles.filter((role) => role !== value);
+                        if (roles.length) set({ roles, role: roles[0] });
+                      }}
+                    />
+                    {t(labelKey)}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <label className="admin-player-field">
               <span>{t('player.majorChampionships')}</span>
-              <input className="input" type="number" min="0" value={form.major_championships} onChange={(event) => set({ major_championships: Number(event.target.value) })} />
+              <input className="input" type="number" min="0" value={form.major_si_championships} onChange={(event) => set({ major_si_championships: Number(event.target.value) })} />
             </label>
             <label className="admin-player-field">
               <span>{t('admin.majorAppearances')}</span>
-              <input className="input" type="number" min="0" value={form.major_appearances} onChange={(event) => set({ major_appearances: Number(event.target.value) })} />
+              <input className="input" type="number" min="0" value={form.major_si_appearances} onChange={(event) => set({ major_si_appearances: Number(event.target.value) })} />
+            </label>
+            <label className="admin-player-field">
+              <span>{t('admin.birthDate')}</span>
+              <input className="input" type="date" value={form.birth_date ?? ''} onChange={(event) => set({ birth_date: event.target.value || null })} />
             </label>
           </div>
+
+          {form.source_provider && (
+            <details className="admin-player-source">
+              <summary>{t('admin.sourceMetadata')}</summary>
+              <div className="admin-player-form-grid">
+                <label className="admin-player-field"><span>{t('admin.sourceProvider')}</span><input className="input" value={form.source_provider} readOnly /></label>
+                <label className="admin-player-field"><span>{t('admin.sourcePlayerId')}</span><input className="input" value={form.source_player_id ?? ''} readOnly /></label>
+                <label className="admin-player-field"><span>{t('admin.dataVersion')}</span><input className="input" value={form.data_version ?? ''} readOnly /></label>
+                <label className="admin-player-field"><span>{t('admin.sourceUpdatedAt')}</span><input className="input" value={form.source_updated_at ?? ''} readOnly /></label>
+                <label className="admin-player-field"><span>{t('admin.sourceUrl')}</span><input className="input" value={form.source_url ?? ''} readOnly /></label>
+                <label className="admin-player-field"><span>{t('admin.eventIds')}</span><textarea className="input" rows={4} value={form.major_si_event_ids.join('\n')} readOnly /></label>
+                <label className="admin-player-field"><span>{t('admin.championshipEventIds')}</span><textarea className="input" rows={4} value={form.major_si_championship_event_ids.join('\n')} readOnly /></label>
+              </div>
+            </details>
+          )}
 
           <div className="admin-player-flags">
             <div className="admin-player-difficulty-field">

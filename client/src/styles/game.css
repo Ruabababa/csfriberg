@@ -45,14 +45,16 @@
   box-shadow: 0 2px 5px rgba(38, 64, 99, 0.04);
 }
 .game-table td.name { font-weight: 700; }
-.game-table th:nth-child(1), .game-table td:nth-child(1) { width: 18%; }
-.game-table th:nth-child(2), .game-table td:nth-child(2) { width: 14%; }
-.game-table th:nth-child(3), .game-table td:nth-child(3) { width: 14%; }
-.game-table th:nth-child(4), .game-table td:nth-child(4) { width: 8%; }
+.game-table th:nth-child(1), .game-table td:nth-child(1) { width: 14%; }
+.game-table th:nth-child(2), .game-table td:nth-child(2) { width: 13%; }
+.game-table th:nth-child(3), .game-table td:nth-child(3) { width: 12%; }
+.game-table th:nth-child(4), .game-table td:nth-child(4) { width: 6%; }
 .game-table th:nth-child(5), .game-table td:nth-child(5) { width: 12%; }
-.game-table th:nth-child(6), .game-table td:nth-child(6) { width: 12%; }
-.game-table th:nth-child(7), .game-table td:nth-child(7) { width: 12%; }
-.game-table th:nth-child(8), .game-table td:nth-child(8) { width: 10%; }
+.game-table th:nth-child(6), .game-table td:nth-child(6) { width: 8%; }
+.game-table th:nth-child(7), .game-table td:nth-child(7) { width: 8%; }
+.game-table th:nth-child(8), .game-table td:nth-child(8) { width: 8%; }
+.game-table th:nth-child(9), .game-table td:nth-child(9) { width: 8%; }
+.game-table th:nth-child(10), .game-table td:nth-child(10) { width: 11%; }
 .game-table td.correct { background: var(--correct); border-color: var(--correct); color: #fff; }
 .game-table td.close { background: var(--close); border-color: var(--close); color: #fff; }
 .game-table td.wrong { background: var(--wrong); border-color: var(--wrong); color: #fff; }
@@ -77,6 +79,8 @@
   .game-table tr.row-latest td:nth-child(6) { animation-delay: 0.3s; }
   .game-table tr.row-latest td:nth-child(7) { animation-delay: 0.36s; }
   .game-table tr.row-latest td:nth-child(8) { animation-delay: 0.42s; }
+  .game-table tr.row-latest td:nth-child(9) { animation-delay: 0.48s; }
+  .game-table tr.row-latest td:nth-child(10) { animation-delay: 0.54s; }
   .game-table tr.row-correct td.name { animation: cell-reveal 0.3s ease backwards, win-pulse 0.5s ease 0.55s; }
 }
 @keyframes row-enter {
@@ -263,12 +267,18 @@
   z-index: 30;
 }
 .autocomplete-list li {
+  display: grid;
+  gap: 2px;
   padding: 12px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
 }
 .autocomplete-list li:hover, .autocomplete-list li.active { background: var(--primary-soft); color: var(--primary-hover); }
+.autocomplete-player-name { font-weight: 700; }
+.autocomplete-player-meta { color: var(--text-light); font-size: 0.72rem; }
+.autocomplete-list li:hover .autocomplete-player-meta,
+.autocomplete-list li.active .autocomplete-player-meta { color: currentColor; opacity: 0.78; }
 
 /* ===== 遮罩弹窗 ===== */
 .overlay {

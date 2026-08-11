@@ -41,8 +41,13 @@ function AnswerSection({ answer }: { answer: PlayerInfo }) {
           nationality: answer.nationality,
           region: answer.region,
           role: answer.role,
-          majorChampionships: answer.majorChampionships,
+          roles: answer.roles,
+          age: answer.age,
+          majorWins: answer.majorWins,
           majorAppearances: answer.majorAppearances,
+          siWins: answer.siWins,
+          siAppearances: answer.siAppearances,
+          status: answer.status,
         }}
       />
     </section>

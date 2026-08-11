@@ -55,7 +55,15 @@ import {
 } from '../redis';
 import { enqueueMatchResult } from '../services/matchResultQueue';
 import { getPresenceStats, ONLINE_STALE_MS, PresenceStats } from '../services/presence';
-import { GuessFeedback, Player } from '../types';
+import {
+  GuessFeedback,
+  Player,
+  majorAppearances,
+  majorWins,
+  playerStatus,
+  siAppearances,
+  siWins,
+} from '../types';
 import { config } from '../config';
 import { logTransientError, logTransientWarning } from '../services/transientLog';
 import { getResourceVersionNotice } from '../services/resourceVersion';
@@ -173,8 +181,7 @@ function joinRoomChannels(socket: Socket, room: StoredRoom, identity: string): v
 }
 
 function visibleGuess(feedback: GuessFeedback) {
-  const { region: _region, ...attributes } = feedback.attributes;
-  return { ...feedback, attributes };
+  return feedback;
 }
 
 function hiddenGuess(feedback: GuessFeedback) {
@@ -190,9 +197,11 @@ function hiddenGuess(feedback: GuessFeedback) {
       team: hideAttribute(feedback.attributes.team),
       age: hideAttribute(feedback.attributes.age),
       role: hideAttribute(feedback.attributes.role),
-      majorChampionships: hideAttribute(feedback.attributes.majorChampionships),
+      majorWins: hideAttribute(feedback.attributes.majorWins),
       majorAppearances: hideAttribute(feedback.attributes.majorAppearances),
-      isActive: hideAttribute(feedback.attributes.isActive),
+      siWins: hideAttribute(feedback.attributes.siWins),
+      siAppearances: hideAttribute(feedback.attributes.siAppearances),
+      status: hideAttribute(feedback.attributes.status),
     },
   };
 }
@@ -224,8 +233,12 @@ function replayAnswer(target: Player) {
     team: target.team,
     age: target.age,
     role: target.role,
-    majorChampionships: target.major_championships,
-    majorAppearances: target.major_appearances,
+    roles: target.roles ?? [target.role],
+    majorWins: majorWins(target),
+    majorAppearances: majorAppearances(target),
+    siWins: siWins(target),
+    siAppearances: siAppearances(target),
+    status: playerStatus(target),
     isActive: Boolean(target.is_active),
   };
 }
@@ -409,8 +422,12 @@ function answerView(targetPlayerId: number | null) {
         nationality: target.nationality,
         region: target.region,
         role: target.role,
-        majorChampionships: target.major_championships,
-        majorAppearances: target.major_appearances,
+        roles: target.roles ?? [target.role],
+        majorWins: majorWins(target),
+        majorAppearances: majorAppearances(target),
+        siWins: siWins(target),
+        siAppearances: siAppearances(target),
+        status: playerStatus(target),
       }
     : null;
 }

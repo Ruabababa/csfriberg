@@ -8,6 +8,7 @@ pow-wasm/target/
 target/
 origin/
 data/pgdata/
+server/data/r6-sync/
 .docker-runtime-test/
 compose.override.yaml
 .pnpm-store/

@@ -15,13 +15,19 @@
   line-height: 1;
 }
 .home-brand-logo {
+  display: grid;
+  place-items: center;
   width: 38px;
   height: 38px;
   flex: 0 0 38px;
-  object-fit: cover;
+  color: #172033;
+  font-family: Bahnschrift, 'Arial Narrow', 'Microsoft YaHei', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--card);
+  border-radius: 7px;
+  background: linear-gradient(145deg, #f7d347, #f4b91f);
   box-shadow: 0 4px 12px rgba(32, 17, 24, 0.14);
 }
 .home-page .header-bar .title { flex: 0 0 auto; max-width: none; overflow: visible; text-overflow: clip; }
@@ -265,6 +271,16 @@
   border-radius: 8px;
   background: var(--card);
   color: var(--primary-strong);
+}
+.friend-links-dialog-image {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--card);
+  object-fit: cover;
+  box-shadow: 0 5px 14px rgba(32, 17, 24, 0.12);
 }
 .friend-links-dialog-list a > span:last-child { display: grid; gap: 5px; min-width: 0; }
 .friend-links-dialog-list strong,
@@ -946,23 +962,27 @@
 /* 列宽按放大后的实际内容重调(仅多人双栏,单人宽表沿用 game.css 的比例)。
    列宽是 % 、字号是 cqw,两者都随容器等比变化 —— 所以这套比例调一次
    在任何缩放档下都成立,不会像固定 px 那样在某个宽度上突然放不下。
-   数字列原先各占 12%(Major 冠军只有 1 位数),把富余让给选手名与战队。 */
+   数字列原先各占 12%（冠军数通常较短），把富余让给选手名与战队。 */
 .player-board .game-table th:nth-child(1),
-.player-board .game-table td:nth-child(1) { width: 21%; }
+.player-board .game-table td:nth-child(1) { width: 14%; }
 .player-board .game-table th:nth-child(2),
-.player-board .game-table td:nth-child(2) { width: 16%; }
+.player-board .game-table td:nth-child(2) { width: 13%; }
 .player-board .game-table th:nth-child(3),
-.player-board .game-table td:nth-child(3) { width: 14%; }
+.player-board .game-table td:nth-child(3) { width: 12%; }
 .player-board .game-table th:nth-child(4),
-.player-board .game-table td:nth-child(4) { width: 9%; }
+.player-board .game-table td:nth-child(4) { width: 6%; }
 .player-board .game-table th:nth-child(5),
-.player-board .game-table td:nth-child(5) { width: 13%; }
+.player-board .game-table td:nth-child(5) { width: 12%; }
 .player-board .game-table th:nth-child(6),
 .player-board .game-table td:nth-child(6) { width: 8%; }
 .player-board .game-table th:nth-child(7),
-.player-board .game-table td:nth-child(7) { width: 9%; }
+.player-board .game-table td:nth-child(7) { width: 8%; }
 .player-board .game-table th:nth-child(8),
-.player-board .game-table td:nth-child(8) { width: 10%; }
+.player-board .game-table td:nth-child(8) { width: 8%; }
+.player-board .game-table th:nth-child(9),
+.player-board .game-table td:nth-child(9) { width: 8%; }
+.player-board .game-table th:nth-child(10),
+.player-board .game-table td:nth-child(10) { width: 11%; }
 .player-board .game-table td.masked-cell:empty::after {
   width: 0.42em;
   height: 0.42em;

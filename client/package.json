@@ -7,6 +7,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:local": "vitest run --no-file-parallelism src/components/GuessInputBar.test.tsx src/components/AnswerOverlay.test.tsx src/pages/MultiRoom.test.tsx",
     "test:watch": "vitest"
   },
   "dependencies": {

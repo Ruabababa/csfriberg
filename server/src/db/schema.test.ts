@@ -48,6 +48,13 @@ describe('player schema migration', () => {
 
     expect(await instance.schema.hasColumn('players', 'real_name')).toBe(false);
     expect(await instance.schema.hasColumn('players', 'major_championships')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'major_si_championships')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'major_si_appearances')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'roles')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'birth_date')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'source_url')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'source_provider')).toBe(true);
+    expect(await instance.schema.hasColumn('players', 'source_player_id')).toBe(true);
     expect(await instance.schema.hasColumn('players', 'is_easy')).toBe(false);
     expect(await instance.schema.hasColumn('players', 'is_enabled')).toBe(true);
     expect(await instance.schema.hasTable('difficulty_levels')).toBe(true);
@@ -70,9 +77,17 @@ describe('player schema migration', () => {
     expect(await instance.schema.hasColumn('announcements', 'is_popup')).toBe(true);
     const player = await instance('players').where({ nickname: 'legacy' }).first();
     expect(player.age).toBe(new Date().getFullYear() - 1990);
-    expect((await instance('players').columnInfo('age')).nullable).toBe(false);
+    expect((await instance('players').columnInfo('age')).nullable).toBe(true);
     expect(player.major_championships).toBe(0);
+    expect(player.major_si_championships).toBe(0);
+    expect(player.major_si_appearances).toBe(2);
+    expect(JSON.parse(player.roles)).toEqual(['Rifler']);
     expect(player.is_enabled).toBe(1);
+    await expect(instance('players').insert({
+      nickname: 'legacy',
+      nationality: 'FR',
+      age: 25,
+    })).resolves.toBeDefined();
     expect(await instance('player_difficulties')
       .where({ player_id: player.id })
       .orderBy('difficulty_key')
@@ -178,7 +193,7 @@ describe('player schema migration', () => {
     await ensureSchema(instance);
     const players = await instance('players').insert([
       {
-        nickname: 's1mple',
+        nickname: 'legacy-champion',
         nationality: '测试',
         age: 25,
         major_championships: 1,
@@ -200,7 +215,7 @@ describe('player schema migration', () => {
     const memberships = await instance('player_difficulties')
       .where({ difficulty_key: 'beginner' })
       .pluck('player_id');
-    const champion = players.find((player) => player.nickname === 's1mple')!;
+    const champion = players.find((player) => player.nickname === 'legacy-champion')!;
     expect(memberships).toEqual([champion.id]);
     expect(await instance('difficulty_levels').where({ key: 'beginner' }).first())
       .toMatchObject({ sort_order: 5, is_enabled: 1 });

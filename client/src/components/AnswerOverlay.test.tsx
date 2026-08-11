@@ -5,12 +5,17 @@ import AnswerOverlay, { PlayerInfoTable } from './AnswerOverlay';
 import { renderWithProviders } from '../test/render';
 
 const answer = {
-  nickname: 'friberg',
-  team: 'NIP',
-  nationality: '瑞典',
-  role: 'Rifler',
-  majorChampionships: 1,
-  majorAppearances: 12,
+  nickname: 'R6Alpha',
+  team: 'Fixture One',
+  nationality: 'FR',
+  role: 'Entry',
+  roles: ['Entry', 'Flex'],
+  age: 24,
+  majorWins: 1,
+  majorAppearances: 4,
+  siWins: 0,
+  siAppearances: 2,
+  status: 'active' as const,
 };
 
 describe('AnswerOverlay', () => {
@@ -20,7 +25,8 @@ describe('AnswerOverlay', () => {
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(screen.getByText('friberg')).toBeInTheDocument();
+    expect(screen.getByText('R6Alpha')).toBeInTheDocument();
+    expect(screen.getByText('突破 / 自由人/补位')).toBeInTheDocument();
   });
 
   it('supports desktop Escape and mobile backdrop dismiss when onClose is provided', async () => {
@@ -63,5 +69,29 @@ describe('AnswerOverlay', () => {
 
     expect(screen.getByText('所属难度')).toBeInTheDocument();
     expect(screen.getByText('入门版, 完整版')).toBeInTheDocument();
+  });
+
+  it('shows unknown instead of blanks for missing player details', () => {
+    renderWithProviders(
+      <PlayerInfoTable
+        answer={{
+          nickname: 'MissingData',
+          team: '',
+          nationality: '',
+          age: null,
+          status: 'unknown',
+        }}
+      />
+    );
+
+    expect(screen.getAllByText('未知')).toHaveLength(5);
+  });
+
+  it('translates Retired when it is stored as the team placeholder', () => {
+    renderWithProviders(
+      <PlayerInfoTable answer={{ ...answer, team: 'Retired', status: 'retired' }} />
+    );
+
+    expect(screen.getAllByText('退役')).toHaveLength(2);
   });
 });

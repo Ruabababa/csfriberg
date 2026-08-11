@@ -6,8 +6,8 @@ import { renderWithProviders } from '../test/render';
 import { getPlayerList } from '../api/playerList';
 
 const players = [
-  { id: 1, nickname: 's1mple' },
-  { id: 2, nickname: 'ZywOo' },
+  { id: 1, nickname: 'R6Alpha', team: 'Fixture One', nationality: 'FR' },
+  { id: 2, nickname: 'R6Bravo', team: 'Fixture Two', nationality: 'CA' },
 ];
 let playerListListener: ((list: typeof players) => void) | null = null;
 
@@ -38,8 +38,9 @@ describe('GuessInputBar', () => {
 
     renderWithProviders(<GuessInputBar onPick={onPick} />);
 
-    await user.type(screen.getByPlaceholderText('输入选手昵称...'), 's1');
-    await screen.findByText('s1mple');
+    await user.type(screen.getByPlaceholderText('输入选手 ID...'), 'r6a');
+    await screen.findByText('R6Alpha');
+    expect(screen.getByText('Fixture One · 法国')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '提交猜测' }));
 
     expect(await screen.findByRole('button', { name: '提交中...' })).toBeDisabled();
@@ -57,18 +58,18 @@ describe('GuessInputBar', () => {
     const onPick = vi.fn(async () => false);
     renderWithProviders(<GuessInputBar onPick={onPick} />);
 
-    const input = screen.getByPlaceholderText('输入选手昵称...');
-    await user.type(input, 's1');
-    await screen.findByText('s1mple');
+    const input = screen.getByPlaceholderText('输入选手 ID...');
+    await user.type(input, 'r6a');
+    await screen.findByText('R6Alpha');
     await user.click(screen.getByRole('button', { name: '提交猜测' }));
 
     await waitFor(() => expect(onPick).toHaveBeenCalled());
-    expect(input).toHaveValue('s1');
+    expect(input).toHaveValue('r6a');
   });
 
   it('disables input while parent marks the dock busy (desktop and mobile)', () => {
     renderWithProviders(<GuessInputBar onPick={vi.fn()} disabled />);
-    expect(screen.getByPlaceholderText('输入选手昵称...')).toBeDisabled();
+    expect(screen.getByPlaceholderText('输入选手 ID...')).toBeDisabled();
     expect(screen.getByRole('button', { name: '提交猜测' })).toBeDisabled();
   });
 
@@ -81,45 +82,45 @@ describe('GuessInputBar', () => {
     const user = userEvent.setup();
     renderWithProviders(<GuessInputBar onPick={vi.fn()} />);
 
-    const input = screen.getByPlaceholderText('输入选手昵称...');
-    await user.type(input, 's1');
-    await screen.findByText('s1mple');
+    const input = screen.getByPlaceholderText('输入选手 ID...');
+    await user.type(input, 'r6a');
+    await screen.findByText('R6Alpha');
 
     act(() => {
       playerListListener?.([
         ...players,
-        { id: 3, nickname: 's1ren' },
+        { id: 3, nickname: 'R6Aegis', team: 'Fixture Three', nationality: 'BR' },
       ]);
     });
 
-    expect(input).toHaveValue('s1');
+    expect(input).toHaveValue('r6a');
     expect(input).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('s1mple')).toBeInTheDocument();
-    expect(screen.getByText('s1ren')).toBeInTheDocument();
+    expect(screen.getByText('R6Alpha')).toBeInTheDocument();
+    expect(screen.getByText('R6Aegis')).toBeInTheDocument();
   });
 
   it('filters the in-memory list in the same input event without debounce', () => {
     renderWithProviders(<GuessInputBar onPick={vi.fn()} />);
     act(() => playerListListener?.(players));
 
-    const input = screen.getByPlaceholderText('输入选手昵称...');
+    const input = screen.getByPlaceholderText('输入选手 ID...');
     fireEvent.focus(input);
-    fireEvent.change(input, { target: { value: 's1' } });
+    fireEvent.change(input, { target: { value: 'r6a' } });
 
-    expect(input).toHaveValue('s1');
-    expect(screen.getByText('s1mple')).toBeInTheDocument();
+    expect(input).toHaveValue('r6a');
+    expect(screen.getByText('R6Alpha')).toBeInTheDocument();
     expect(input).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('does not revalidate the player list on every input change', async () => {
     renderWithProviders(<GuessInputBar onPick={vi.fn()} />);
     await waitFor(() => expect(getPlayerList).toHaveBeenCalled());
-    const input = screen.getByPlaceholderText('输入选手昵称...');
+    const input = screen.getByPlaceholderText('输入选手 ID...');
     fireEvent.focus(input);
     const callsAfterFocus = vi.mocked(getPlayerList).mock.calls.length;
 
-    fireEvent.change(input, { target: { value: 's' } });
-    fireEvent.change(input, { target: { value: 's1' } });
+    fireEvent.change(input, { target: { value: 'r' } });
+    fireEvent.change(input, { target: { value: 'r6' } });
 
     expect(getPlayerList).toHaveBeenCalledTimes(callsAfterFocus);
   });
@@ -128,23 +129,23 @@ describe('GuessInputBar', () => {
     const user = userEvent.setup();
     renderWithProviders(<GuessInputBar onPick={vi.fn()} />);
 
-    const input = screen.getByPlaceholderText('输入选手昵称...');
-    await user.type(input, 's1');
+    const input = screen.getByPlaceholderText('输入选手 ID...');
+    await user.type(input, 'r6a');
     act(() => {
       playerListListener?.([
-        { id: 1, nickname: 's1mple' },
-        { id: 3, nickname: 's1ren' },
+        { id: 1, nickname: 'R6Alpha', team: 'Fixture One', nationality: 'FR' },
+        { id: 3, nickname: 'R6Aegis', team: 'Fixture Three', nationality: 'BR' },
       ]);
     });
 
     fireEvent.keyDown(input, { key: 'Tab' });
-    expect(input).toHaveValue('s1mple');
+    expect(input).toHaveValue('R6Alpha');
     expect(input).toHaveAttribute('aria-expanded', 'true');
 
     fireEvent.keyDown(input, { key: 'Tab' });
-    expect(input).toHaveValue('s1ren');
+    expect(input).toHaveValue('R6Aegis');
 
     fireEvent.keyDown(input, { key: 'Tab', shiftKey: true });
-    expect(input).toHaveValue('s1mple');
+    expect(input).toHaveValue('R6Alpha');
   });
 });

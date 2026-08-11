@@ -871,7 +871,7 @@ describe('multiplayer socket integration', () => {
       expect(hiddenUpdate.guessCount).toBeUndefined();
       expect(hiddenUpdate.feedback).not.toHaveProperty('playerId');
       expect(hiddenUpdate.feedback).not.toHaveProperty('nickname');
-      expect(hiddenUpdate.feedback.attributes).not.toHaveProperty('region');
+      expect(hiddenUpdate.feedback.attributes.region).not.toHaveProperty('value');
       expect(hiddenUpdate.feedback.attributes.team).not.toHaveProperty('value');
 
       const spectatorUpdate = await spectatorEvent;
@@ -879,7 +879,7 @@ describe('multiplayer socket integration', () => {
       expect(spectatorUpdate.eventId).toBeUndefined();
       expect(spectatorUpdate.guessCount).toBeUndefined();
       expect(spectatorUpdate.feedback.nickname).toEqual(expect.any(String));
-      expect(spectatorUpdate.feedback.attributes).not.toHaveProperty('region');
+      expect(spectatorUpdate.feedback.attributes.region).toHaveProperty('value');
       expect(spectatorUpdate.feedback.attributes.team).toHaveProperty('value');
 
       const syncedB = await emit(b, 'room:sync');

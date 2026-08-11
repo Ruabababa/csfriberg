@@ -7,17 +7,16 @@ import {
 } from '../types';
 import { playerRoleLabel } from '../utils/playerRoles';
 import { countryLabel } from '../utils/playerGeography';
+import { playerTeamLabel } from '../utils/playerTeam';
 import { useTranslation } from 'react-i18next';
 
 function Cell({
   attr,
   label,
-  bool,
   format,
 }: {
   attr: AttributeFeedback | HiddenAttributeFeedback;
   label: string;
-  bool?: boolean;
   format?: (value: string) => string;
 }) {
   const { t } = useTranslation();
@@ -32,12 +31,9 @@ function Cell({
       </td>
     );
   }
-  const text =
-    typeof attr.value === 'boolean' || bool
-      ? attr.value
-        ? t('common.active')
-        : t('common.retired')
-      : format
+  const text = attr.value == null || attr.value === ''
+    ? t('common.unknown')
+    : format
         ? format(String(attr.value))
         : String(attr.value);
   return (
@@ -57,12 +53,14 @@ function GuessBoard({ guesses }: { guesses: MultiplayerGuessFeedback[] }) {
   const { t } = useTranslation();
   const columns = [
     t('guess.columns.nickname'),
-    t('guess.columns.team'),
     t('guess.columns.nationality'),
+    t('guess.columns.team'),
     t('guess.columns.age'),
     t('guess.columns.role'),
-    t('guess.columns.majorChampionships'),
     t('guess.columns.majorAppearances'),
+    t('guess.columns.majorWins'),
+    t('guess.columns.siAppearances'),
+    t('guess.columns.siWins'),
     t('guess.columns.status'),
   ];
   return (
@@ -87,17 +85,29 @@ function GuessBoard({ guesses }: { guesses: MultiplayerGuessFeedback[] }) {
               >
                 {'hidden' in g ? null : g.nickname}
               </td>
-              <Cell attr={g.attributes.team} label={columns[1]} />
               <Cell
                 attr={g.attributes.nationality}
-                label={columns[2]}
+                label={columns[1]}
                 format={(value) => countryLabel(t, value)}
+              />
+              <Cell
+                attr={g.attributes.team}
+                label={columns[2]}
+                format={(value) => playerTeamLabel(t, value)}
               />
               <Cell attr={g.attributes.age} label={columns[3]} />
               <Cell attr={g.attributes.role} label={columns[4]} format={playerRoleLabel} />
-              <Cell attr={g.attributes.majorChampionships} label={columns[5]} />
-              <Cell attr={g.attributes.majorAppearances} label={columns[6]} />
-              <Cell attr={g.attributes.isActive} label={columns[7]} bool />
+              <Cell attr={g.attributes.majorAppearances} label={columns[5]} />
+              <Cell attr={g.attributes.majorWins} label={columns[6]} />
+              <Cell attr={g.attributes.siAppearances} label={columns[7]} />
+              <Cell attr={g.attributes.siWins} label={columns[8]} />
+              <Cell
+                attr={g.attributes.status}
+                label={columns[9]}
+                format={(value) => value === 'active'
+                  ? t('common.active')
+                  : value === 'retired' ? t('common.retired') : t('common.unknown')}
+              />
             </tr>
           ))}
         </tbody>

@@ -37,7 +37,7 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function renderGame(mode = 'easy') {
+function renderGame(mode = 'beginner') {
   return renderAtRoute(
     <SingleGame />,
     {
@@ -54,7 +54,7 @@ function renderGame(mode = 'easy') {
 }
 
 async function waitForReadyInput() {
-  const input = await screen.findByPlaceholderText('输入选手昵称...');
+  const input = await screen.findByPlaceholderText('输入选手 ID...');
   await waitFor(() => expect(input).not.toBeDisabled());
   return input;
 }
@@ -77,23 +77,23 @@ describe('SingleGame UX', () => {
     const start = deferred<{ data: { gameId: string; guesses: []; maxGuesses: number } }>();
     post.mockReturnValueOnce(start.promise as never);
 
-    renderGame('easy');
+    renderGame('beginner');
 
     expect(await screen.findByText('正在开始新对局…', { selector: 'p' })).toBeInTheDocument();
     expect(document.querySelector('.spinner')).toBeTruthy();
-    expect(screen.getByPlaceholderText('输入选手昵称...')).toBeDisabled();
+    expect(screen.getByPlaceholderText('输入选手 ID...')).toBeDisabled();
     expect(document.querySelector('.guess-input-feedback')).toBeNull();
 
     start.resolve({ data: { gameId: 'g1', guesses: [], maxGuesses: 8 } });
     await waitForReadyInput();
-    expect(screen.getByText('在下方输入选手昵称开始猜测')).toBeInTheDocument();
-    expect(localStorage.getItem('csgofriberg.single-difficulty')).toBe('easy');
+    expect(screen.getByText('在下方输入选手 ID 开始猜测')).toBeInTheDocument();
+    expect(localStorage.getItem('csgofriberg.single-difficulty')).toBe('beginner');
   });
 
   it('shows start failure recovery actions when network fails', async () => {
     post.mockRejectedValueOnce(new Error('offline'));
 
-    renderGame('easy');
+    renderGame('beginner');
 
     expect(await screen.findByText('开局失败')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('SingleGame UX', () => {
 
   it('disables dock and shows starting copy while restart is in flight', async () => {
     post.mockResolvedValueOnce({ data: { gameId: 'g1', guesses: [], maxGuesses: 8 } } as never);
-    renderGame('easy');
+    renderGame('beginner');
     await waitForReadyInput();
 
     const restart = deferred<unknown>();
@@ -116,14 +116,14 @@ describe('SingleGame UX', () => {
     await user.click(within(dialog).getByRole('button', { name: '重新开始' }));
 
     expect(await screen.findByText('正在开始新对局…', { selector: 'p' })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('输入选手昵称...')).toBeDisabled();
+    expect(screen.getByPlaceholderText('输入选手 ID...')).toBeDisabled();
     expect(screen.getByRole('button', { name: '重新开始' })).toBeDisabled();
   });
 
   it('marks page keyboard-active on focus for mobile chrome collapse CSS', async () => {
     installViewportMocks(true);
     post.mockResolvedValueOnce({ data: { gameId: 'g1', guesses: [], maxGuesses: 8 } } as never);
-    renderGame('easy');
+    renderGame('beginner');
 
     const input = await waitForReadyInput();
     await userEvent.click(input);
@@ -133,7 +133,7 @@ describe('SingleGame UX', () => {
 
   it('shows reveal busy state on the action button and top status bar', async () => {
     post.mockResolvedValueOnce({ data: { gameId: 'g1', guesses: [], maxGuesses: 8 } } as never);
-    renderGame('easy');
+    renderGame('beginner');
     await waitForReadyInput();
 
     const giveup = deferred<{ data: { answer: { nickname: string; team: string; nationality: string } } }>();
@@ -150,14 +150,14 @@ describe('SingleGame UX', () => {
       expect(revealButton).toHaveTextContent('处理中');
     });
     expect(document.querySelector('.status-bar')).toHaveTextContent('处理中');
-    expect(screen.getByPlaceholderText('输入选手昵称...')).toBeDisabled();
+    expect(screen.getByPlaceholderText('输入选手 ID...')).toBeDisabled();
 
     giveup.resolve({
       data: {
-        answer: { nickname: 'friberg', team: 'NIP', nationality: '瑞典' },
+        answer: { nickname: 'R6Alpha', team: 'Fixture One', nationality: 'FR' },
       },
     });
-    expect(await screen.findByRole('dialog')).toHaveTextContent('friberg');
+    expect(await screen.findByRole('dialog')).toHaveTextContent('R6Alpha');
   });
 
   it('keeps an unrecorded settlement warning visible in the answer dialog', async () => {
@@ -167,10 +167,10 @@ describe('SingleGame UX', () => {
         data: {
           status: 'lost',
           recorded: false,
-          answer: { nickname: 'friberg', team: 'NIP', nationality: '瑞典' },
+          answer: { nickname: 'R6Alpha', team: 'Fixture One', nationality: 'FR' },
         },
       } as never);
-    renderGame('easy');
+    renderGame('beginner');
     await waitForReadyInput();
 
     const user = userEvent.setup();
@@ -178,13 +178,13 @@ describe('SingleGame UX', () => {
     await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '查看答案' }));
 
     const result = await screen.findByRole('dialog');
-    expect(result).toHaveTextContent('friberg');
+    expect(result).toHaveTextContent('R6Alpha');
     expect(result).toHaveTextContent('结算频率超过限制，本局不会计入个人战绩和排行榜。');
   });
 
   it('shows leaving busy state before navigating home', async () => {
     post.mockResolvedValueOnce({ data: { gameId: 'g1', guesses: [], maxGuesses: 8 } } as never);
-    renderGame('easy');
+    renderGame('beginner');
     await waitForReadyInput();
 
     const exit = deferred<unknown>();

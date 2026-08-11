@@ -328,18 +328,47 @@ describe('admin user management', () => {
     const [insertedPlayer] = await db('players')
       .insert({
         nickname,
-        nationality: 'China',
-        region: 'Asia',
+        nationality: 'FR',
+        region: 'Europe',
         team: 'Export Test',
         age: 24,
-        role: 'Rifler',
-        major_championships: 0,
+        role: 'Support',
+        roles: JSON.stringify(['Support', 'IGL']),
+        major_championships: 1,
         major_appearances: 2,
+        major_si_championships: 1,
+        major_si_appearances: 2,
+        birth_date: '2002-02-02',
+        source_provider: 'liquipedia',
+        source_player_id: `export-source-${stamp}`,
+        source_url: 'https://liquipedia.net/rainbowsix/ExportPlayer',
+        source_updated_at: '2026-08-04T00:00:00.000Z',
+        data_version: 'fixture-v1',
+        major_si_event_ids: JSON.stringify(['major-1', 'si-1']),
+        major_si_championship_event_ids: JSON.stringify(['si-1']),
         is_active: false,
         is_enabled: true,
       })
       .returning('id');
     const playerId = Number(typeof insertedPlayer === 'object' ? insertedPlayer.id : insertedPlayer);
+    const disabledNickname = `DisabledExport${stamp}`;
+    const [insertedDisabledPlayer] = await db('players')
+      .insert({
+        nickname: disabledNickname,
+        nationality: 'Unknown',
+        region: '',
+        team: '',
+        age: 0,
+        role: '',
+        major_championships: 0,
+        major_appearances: 0,
+        is_active: false,
+        is_enabled: false,
+      })
+      .returning('id');
+    const disabledPlayerId = Number(
+      typeof insertedDisabledPlayer === 'object' ? insertedDisabledPlayer.id : insertedDisabledPlayer
+    );
     try {
       await db('player_difficulties').insert([
         { player_id: playerId, difficulty_key: 'normal' },
@@ -350,15 +379,29 @@ describe('admin user management', () => {
       expect(exported.response.status).toBe(200);
       expect(exported.response.headers.get('content-disposition')).toContain('players.json');
       expect(() => playerImportSchema.parse({ players: exported.data })).not.toThrow();
+      expect(exported.data.some(
+        (player: { nickname: string }) => player.nickname === disabledNickname
+      )).toBe(false);
       expect(exported.data.find((player: { nickname: string }) => player.nickname === nickname)).toEqual({
         nickname,
-        nationality: 'China',
-        region: 'Asia',
+        nationality: 'FR',
+        region: 'Europe',
         team: 'Export Test',
         age: 24,
-        role: 'Rifler',
-        major_championships: 0,
+        role: 'Support',
+        roles: ['Support', 'IGL'],
+        major_championships: 1,
         major_appearances: 2,
+        major_si_championships: 1,
+        major_si_appearances: 2,
+        birth_date: '2002-02-02',
+        source_url: 'https://liquipedia.net/rainbowsix/ExportPlayer',
+        source_provider: 'liquipedia',
+        source_player_id: `export-source-${stamp}`,
+        source_updated_at: expect.any(String),
+        data_version: 'fixture-v1',
+        major_si_event_ids: ['major-1', 'si-1'],
+        major_si_championship_event_ids: ['si-1'],
         difficulties: ['easy', 'normal'],
         is_active: false,
         is_enabled: true,
@@ -369,7 +412,7 @@ describe('admin user management', () => {
       expect(forbidden.data).toEqual({ code: 'FORBIDDEN' });
     } finally {
       await db('player_difficulties').where({ player_id: playerId }).del();
-      await db('players').where({ id: playerId }).del();
+      await db('players').whereIn('id', [playerId, disabledPlayerId]).del();
       await db('users').whereIn('username', [adminUsername, userUsername]).del();
     }
   });

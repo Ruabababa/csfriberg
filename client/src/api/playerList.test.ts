@@ -31,9 +31,9 @@ describe('playerList cache', () => {
   });
 
   it('returns stored players immediately and revalidates once in the background', async () => {
-    const cached = [{ id: 1, nickname: 'cached' }];
-    const updated = [{ id: 2, nickname: 'updated' }];
-    localStorage.setItem('player-list-v1', JSON.stringify({ version: '1', players: cached }));
+    const cached = [{ id: 1, nickname: 'R6Cached', team: 'One', nationality: 'FR' }];
+    const updated = [{ id: 2, nickname: 'R6Updated', team: 'Two', nationality: 'CA' }];
+    localStorage.setItem('player-list-v2', JSON.stringify({ version: '1', players: cached }));
     const request = deferred<any>();
     get.mockReturnValue(request.promise);
     const listener = vi.fn();
@@ -56,18 +56,18 @@ describe('playerList cache', () => {
 
   it('matches leet nicknames while keeping direct matches ahead of equivalents', () => {
     const players = [
-      { id: 1, nickname: 's1mple' },
-      { id: 2, nickname: 'simplex' },
-      { id: 3, nickname: 'B1t' },
-      { id: 4, nickname: 'bitwise' },
-      { id: 5, nickname: 'f0rest' },
+      { id: 1, nickname: 'R6mpl3' },
+      { id: 2, nickname: 'R6mplex' },
+      { id: 3, nickname: 'Fl3x' },
+      { id: 4, nickname: 'Flexor' },
+      { id: 5, nickname: 'R0amer' },
     ];
 
-    expect(searchPlayerList(players, 'simple').map((player) => player.nickname))
-      .toEqual(['s1mple', 'simplex']);
-    expect(searchPlayerList(players, 'bit').map((player) => player.nickname))
-      .toEqual(['B1t', 'bitwise']);
-    expect(searchPlayerList(players, 'forest').map((player) => player.nickname))
-      .toEqual(['f0rest']);
+    expect(searchPlayerList(players, 'r6mple').map((player) => player.nickname))
+      .toEqual(['R6mpl3', 'R6mplex']);
+    expect(searchPlayerList(players, 'flex').map((player) => player.nickname))
+      .toEqual(['Fl3x', 'Flexor']);
+    expect(searchPlayerList(players, 'roamer').map((player) => player.nickname))
+      .toEqual(['R0amer']);
   });
 });

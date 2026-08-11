@@ -179,9 +179,9 @@
   .rule-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rule-result-notes { grid-template-columns: 1fr; }
 
-  .game-table-wrap { overflow-x: hidden; border-radius: 10px; }
+  .game-table-wrap { overflow-x: auto; border-radius: 10px; }
   .game-table {
-    min-width: 0;
+    min-width: 780px;
     table-layout: fixed;
     border-spacing: 2px;
     font-size: var(--fs-2xs);
@@ -217,6 +217,7 @@
     font-size: 0.92rem;
   }
   .player-board .game-table {
+    min-width: 660px;
     border-spacing: 0.16em;
     font-size: clamp(0.6rem, 2.75cqw, 0.78rem);
   }

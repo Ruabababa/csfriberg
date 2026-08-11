@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderAtRoute } from '../test/render';
@@ -29,7 +29,7 @@ describe('Leaderboard filters', () => {
     });
   });
 
-  it('filters solo and multiplayer rankings with the difficulty dropdown', async () => {
+  it('only exposes beginner for solo and multiplayer rankings', async () => {
     const user = userEvent.setup();
     renderAtRoute(<Leaderboard />);
 
@@ -37,14 +37,15 @@ describe('Leaderboard filters', () => {
       params: { mode: 'single', difficulty: 'beginner' },
     }));
 
-    await user.selectOptions(screen.getByRole('combobox', { name: '难度' }), 'easy');
-    await waitFor(() => expect(apiGet).toHaveBeenLastCalledWith('/leaderboard', {
-      params: { mode: 'single', difficulty: 'easy' },
-    }));
+    const difficulty = screen.getByRole('combobox', { name: '难度' });
+    expect(difficulty).toHaveValue('beginner');
+    expect(within(difficulty).getAllByRole('option')).toHaveLength(1);
+    expect(within(difficulty).queryByRole('option', { name: '简单版' })).not.toBeInTheDocument();
+    expect(within(difficulty).queryByRole('option', { name: '完整版' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: '多人' }));
     await waitFor(() => expect(apiGet).toHaveBeenLastCalledWith('/leaderboard', {
-      params: { mode: 'multi', difficulty: 'easy' },
+      params: { mode: 'multi', difficulty: 'beginner' },
     }));
     expect(screen.getByRole('tab', { name: '多人' })).toHaveAttribute('aria-selected', 'true');
   });

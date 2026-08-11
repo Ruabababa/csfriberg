@@ -1,7 +1,7 @@
 export type FeedbackLevel = 'correct' | 'close' | 'wrong';
 
 export interface AttributeFeedback {
-  value: string | number | boolean;
+  value: string | number | boolean | null;
   level: FeedbackLevel;
   hint?: 'higher' | 'lower';
 }
@@ -15,9 +15,11 @@ export interface GuessFeedback {
     team: AttributeFeedback;
     age: AttributeFeedback;
     role: AttributeFeedback;
-    majorChampionships: AttributeFeedback;
+    majorWins: AttributeFeedback;
     majorAppearances: AttributeFeedback;
-    isActive: AttributeFeedback;
+    siWins: AttributeFeedback;
+    siAppearances: AttributeFeedback;
+    status: AttributeFeedback;
   };
 }
 
@@ -31,9 +33,11 @@ export interface HiddenGuessFeedback {
     team: HiddenAttributeFeedback;
     age: HiddenAttributeFeedback;
     role: HiddenAttributeFeedback;
-    majorChampionships: HiddenAttributeFeedback;
+    majorWins: HiddenAttributeFeedback;
     majorAppearances: HiddenAttributeFeedback;
-    isActive: HiddenAttributeFeedback;
+    siWins: HiddenAttributeFeedback;
+    siAppearances: HiddenAttributeFeedback;
+    status: HiddenAttributeFeedback;
   };
 }
 
@@ -51,12 +55,17 @@ export interface PlayerInfo {
   nationality: string;
   region: string;
   team: string;
-  age: number;
+  age: number | null;
   role: string;
-  majorChampionships: number;
+  roles: string[];
+  birthDate?: string | null;
   majorAppearances: number;
+  majorWins: number;
+  siAppearances: number;
+  siWins: number;
   difficulties?: string[];
   isActive: boolean;
+  status: 'active' | 'retired' | 'unknown';
 }
 
 export interface RoomPlayer {
@@ -154,8 +163,13 @@ export interface RoomState {
       nationality: string;
       region: string;
       role: string;
-      majorChampionships: number;
+      roles?: string[];
+      age?: number | null;
+      majorWins: number;
       majorAppearances: number;
+      siWins: number;
+      siAppearances: number;
+      status?: 'active' | 'retired' | 'unknown';
     } | null;
   } | null;
   matchResult: {
@@ -167,8 +181,13 @@ export interface RoomState {
       nationality: string;
       region: string;
       role: string;
-      majorChampionships: number;
+      roles?: string[];
+      age?: number | null;
+      majorWins: number;
       majorAppearances: number;
+      siWins: number;
+      siAppearances: number;
+      status?: 'active' | 'retired' | 'unknown';
     } | null;
   } | null;
   matchReplay?: MatchReplay;
