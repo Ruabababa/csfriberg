@@ -26,6 +26,7 @@ import LanguageSelect from '../components/LanguageSelect';
 import HomeSpecialThanks from '../components/HomeSpecialThanks';
 import HomeFriendLinks from '../components/HomeFriendLinks';
 import PersonalSettings from '../components/PersonalSettings';
+import { MULTIPLAYER_ENABLED } from '../config/features';
 
 function GitHubIcon() {
   return (
@@ -87,13 +88,17 @@ export default function Home() {
     setLoggingOut(true);
     try {
       await api.post('/auth/logout');
-      const { closeSocket } = await import('../api/socket');
-      closeSocket();
+      if (MULTIPLAYER_ENABLED) {
+        const { closeSocket } = await import('../api/socket');
+        closeSocket();
+      }
       clearAuthenticated();
       markGuestSession();
       setUser(null);
-      const { getSocket } = await import('../api/socket');
-      getSocket();
+      if (MULTIPLAYER_ENABLED) {
+        const { getSocket } = await import('../api/socket');
+        getSocket();
+      }
       navigate('/');
     } catch (error) {
       toast.error(errMsg(error));
@@ -191,13 +196,15 @@ export default function Home() {
             description={t('home.singleModeDescription')}
             color="#f28c28"
           />
-          <MenuCard
-            to="/multi"
-            icon={<Globe size={22} />}
-            label={t('home.multiplayer')}
-            description={t('home.multiplayerDescription')}
-            color="#58c7bd"
-          />
+          {MULTIPLAYER_ENABLED && (
+            <MenuCard
+              to="/multi"
+              icon={<Globe size={22} />}
+              label={t('home.multiplayer')}
+              description={t('home.multiplayerDescription')}
+              color="#58c7bd"
+            />
+          )}
           <MenuCard
             to="/search"
             icon={<Search size={22} />}

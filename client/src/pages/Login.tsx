@@ -4,10 +4,10 @@ import { KeyRound } from 'lucide-react';
 import Page from '../components/Page';
 import { api, errMsg } from '../api/client';
 import { useAuth } from '../store/auth';
-import { closeSocket, getSocket } from '../api/socket';
 import { markAuthenticated } from '../api/session';
 import { toast } from '../components/Toast';
 import { useTranslation } from 'react-i18next';
+import { MULTIPLAYER_ENABLED } from '../config/features';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -30,8 +30,11 @@ export default function Login() {
       const res = await api.post(`/auth/${mode}`, { username, password });
       markAuthenticated();
       setUser(res.data.user);
-      closeSocket();
-      getSocket();
+      if (MULTIPLAYER_ENABLED) {
+        const { closeSocket, getSocket } = await import('../api/socket');
+        closeSocket();
+        getSocket();
+      }
       // 把匿名期间的对局并入账号(失败不阻塞登录)
       try {
         await api.post('/auth/claim');

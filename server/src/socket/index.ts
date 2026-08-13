@@ -211,7 +211,7 @@ function connectedSpectatorCount(room: StoredRoom): number {
 }
 
 function identityDisplayName(identity: StoredIdentity): string {
-  if (identity.userId !== null) {
+  if (Number.isInteger(identity.userId)) {
     return /^用户#[0-9A-Z]{5}$/.test(identity.name)
       ? identity.name
       : userNameFromUsername(identity.name);

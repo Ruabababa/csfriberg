@@ -11,6 +11,7 @@ import ResourceUpdateDialog from './components/ResourceUpdateDialog';
 import ToastViewport from './components/Toast';
 import AnnouncementDialog from './components/AnnouncementDialog';
 import './i18n';
+import { MULTIPLAYER_ENABLED } from './config/features';
 
 localStorage.removeItem('token');
 localStorage.removeItem('user');
@@ -53,7 +54,7 @@ void stylesheetsReady().then(() => {
     <React.StrictMode>
       <ConfirmProvider>
         <RouterProvider router={router} />
-        <ResourceUpdateDialog />
+        {MULTIPLAYER_ENABLED && <ResourceUpdateDialog />}
         <AnnouncementDialog />
         <ToastViewport />
       </ConfirmProvider>
@@ -64,13 +65,15 @@ void stylesheetsReady().then(() => {
   void ensurePow().catch(() => undefined);
   void initializeIdentity();
 
-  const connectPresence = () => {
-    void import('./api/socket').then(({ getSocket }) => getSocket()).catch(() => undefined);
-  };
-  const requestIdle = window.requestIdleCallback?.bind(window);
-  if (requestIdle) {
-    requestIdle(connectPresence, { timeout: 2_000 });
-  } else {
-    globalThis.setTimeout(connectPresence, 500);
+  if (MULTIPLAYER_ENABLED) {
+    const connectPresence = () => {
+      void import('./api/socket').then(({ getSocket }) => getSocket()).catch(() => undefined);
+    };
+    const requestIdle = window.requestIdleCallback?.bind(window);
+    if (requestIdle) {
+      requestIdle(connectPresence, { timeout: 2_000 });
+    } else {
+      globalThis.setTimeout(connectPresence, 500);
+    }
   }
 });

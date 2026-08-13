@@ -146,6 +146,21 @@ function exportIsoDateTime(value: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+function exportIsoDate(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  const parsed = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function parseStringArray(value: unknown, fallback: string[] = []): string[] {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
   if (typeof value !== 'string' || !value.trim()) return fallback;
@@ -700,7 +715,7 @@ router.get(
       major_appearances: Number(player.major_appearances),
       major_si_championships: majorSiChampionships(player as Player),
       major_si_appearances: majorSiAppearances(player as Player),
-      birth_date: player.birth_date || null,
+      birth_date: exportIsoDate(player.birth_date),
       source_url: player.source_url || null,
       source_provider: player.source_provider || null,
       source_player_id: player.source_player_id || null,

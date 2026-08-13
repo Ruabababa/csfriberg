@@ -21,6 +21,16 @@ const configuredBcryptRounds = Number(process.env.BCRYPT_ROUNDS || 8);
 const configuredAdminImportBodyLimitBytes = Number(
   process.env.ADMIN_IMPORT_BODY_LIMIT_BYTES || 2 * 1024 * 1024
 );
+const vercelOrigins = [process.env.VERCEL_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
+  .map((value) => value?.trim())
+  .filter((value): value is string => Boolean(value))
+  .map((value) => value.startsWith('http://') || value.startsWith('https://')
+    ? value
+    : `https://${value}`);
+const configuredCorsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
 
 export const config = {
   port: Number(process.env.PORT || 3000),
@@ -28,8 +38,8 @@ export const config = {
   guestIdSalt: configuredGuestIdSalt || jwtSecret,
   dbClient: (process.env.DB_CLIENT || 'sqlite') as 'sqlite' | 'pg',
   dbUrl: process.env.DB_URL || './data/csgofriberg.sqlite3',
-  dbPoolMin: Number(process.env.DB_POOL_MIN || 2),
-  dbPoolMax: Number(process.env.DB_POOL_MAX || 20),
+  dbPoolMin: Number(process.env.DB_POOL_MIN || 0),
+  dbPoolMax: Number(process.env.DB_POOL_MAX || 1),
   dbAcquireTimeoutMs: Math.max(500, Number(process.env.DB_ACQUIRE_TIMEOUT_MS || 3000)),
   trustProxy: process.env.TRUST_PROXY === 'true',
   redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
@@ -59,14 +69,12 @@ export const config = {
   powChallengeTtlSeconds: Number(process.env.POW_CHALLENGE_TTL_SECONDS || 120),
   powTokenTtlSeconds: Number(process.env.POW_TOKEN_TTL_SECONDS || 600),
   showLeaderboard: process.env.SHOW_LEADERBOARD !== 'false',
+  multiplayerEnabled: process.env.MULTIPLAYER_ENABLED === 'true',
   umami: resolveUmamiConfig({
     websiteId: process.env.UMAMI_WEBSITE_ID,
     scriptUrl: process.env.UMAMI_SCRIPT_URL,
   }),
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean),
+  corsOrigins: [...new Set([...configuredCorsOrigins, ...vercelOrigins])],
 };
 
 export function validateProductionConfig(): void {

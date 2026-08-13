@@ -51,6 +51,15 @@ function makeClient(label: string): Client {
   );
 }
 
+function redisEndpoint(): string {
+  try {
+    const url = new URL(config.redisUrl);
+    return `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}`;
+  } catch {
+    return 'configured endpoint';
+  }
+}
+
 function duplicateClient(label: string): Client {
   if (!commandClient) throw new Error('REDIS_NOT_INITIALIZED');
   return attachClientEvents(commandClient.duplicate() as Client, label);
@@ -60,21 +69,20 @@ export function redisKey(key: string): string {
   return `${config.redisPrefix}${key}`;
 }
 
-export async function initRedis(): Promise<boolean> {
+export async function initRedis(options: { multiplayer?: boolean } = { multiplayer: true }): Promise<boolean> {
   if (commandClient?.isReady) return true;
   commandClient = makeClient('command');
-  stateClient = duplicateClient('state');
-  publisherClient = duplicateClient('publisher');
-  subscriberClient = duplicateClient('subscriber');
+  stateClient = options.multiplayer ? duplicateClient('state') : null;
+  publisherClient = options.multiplayer ? duplicateClient('publisher') : null;
+  subscriberClient = options.multiplayer ? duplicateClient('subscriber') : null;
   try {
-    await Promise.all([
-      commandClient.connect(),
-      stateClient.connect(),
-      publisherClient.connect(),
-      subscriberClient.connect(),
-    ]);
+    await Promise.all(
+      [commandClient, stateClient, publisherClient, subscriberClient]
+        .filter((client): client is Client => Boolean(client))
+        .map((client) => client.connect())
+    );
     available = true;
-    console.log(`[redis] connected: ${config.redisUrl}`);
+    console.log(`[redis] connected: ${redisEndpoint()}`);
     return true;
   } catch (err) {
     available = false;
@@ -86,7 +94,7 @@ export async function initRedis(): Promise<boolean> {
 }
 
 export function isRedisAvailable(): boolean {
-  return available && Boolean(commandClient?.isReady && stateClient?.isReady);
+  return available && Boolean(commandClient?.isReady);
 }
 
 export function redis(): Client | null {
@@ -96,7 +104,7 @@ export function redis(): Client | null {
 
 /** Isolate room and matchmaking state from HTTP, presence, and rate-limit traffic. */
 export function redisState(): Client | null {
-  if (!isRedisAvailable() || !stateClient) return null;
+  if (!isRedisAvailable() || !stateClient?.isReady) return null;
   return stateClient.withCommandOptions({ timeout: config.redisCommandTimeoutMs }) as Client;
 }
 

@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "tsBuildInfoFile": "../node_modules/.cache/client.tsbuildinfo"
   },
   "include": ["src"]
 }
