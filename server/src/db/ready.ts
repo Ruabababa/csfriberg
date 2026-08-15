@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import { db } from './knex';
 
-const REQUIRED_COLUMNS: Record<string, string[]> = {
+export const REQUIRED_COLUMNS: Record<string, string[]> = {
   users: ['id', 'username', 'password_hash', 'role', 'token_version', 'leaderboard_hidden', 'matchmaking_restricted'],
   api_tokens: ['id', 'name', 'token_hash', 'prefix', 'created_by_user_id', 'expires_at'],
   app_migrations: ['name', 'applied_at'],
@@ -52,18 +52,57 @@ const REQUIRED_COLUMNS: Record<string, string[]> = {
   announcements: ['id', 'title', 'content', 'is_popup'],
 };
 
-/** Applications only verify the migrated schema; DDL remains owned by the migrate service. */
-export async function assertDatabaseReady(instance: Knex = db): Promise<void> {
-  await instance.raw('select 1');
+function missingColumns(existingColumns: Map<string, Set<string>>): string[] {
   const missing: string[] = [];
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
-    if (!(await instance.schema.hasTable(table))) {
+    const existing = existingColumns.get(table);
+    if (!existing) {
       missing.push(table);
       continue;
     }
     for (const column of columns) {
-      if (!(await instance.schema.hasColumn(table, column))) missing.push(`${table}.${column}`);
+      if (!existing.has(column)) missing.push(`${table}.${column}`);
     }
   }
+  return missing;
+}
+
+async function assertPostgresReady(instance: Knex): Promise<void> {
+  const result = await instance.raw<{ rows: Array<{ table_name: string; column_name: string }> }>(
+    `select table_name, column_name
+       from information_schema.columns
+      where table_schema = current_schema()
+        and table_name = any(?::text[])`,
+    [Object.keys(REQUIRED_COLUMNS)]
+  );
+  const existingColumns = new Map<string, Set<string>>();
+  for (const row of result.rows) {
+    const columns = existingColumns.get(row.table_name) ?? new Set<string>();
+    columns.add(row.column_name);
+    existingColumns.set(row.table_name, columns);
+  }
+  const missing = missingColumns(existingColumns);
+  if (missing.length) throw new Error(`DATABASE_SCHEMA_NOT_READY:${missing.join(',')}`);
+}
+
+/** Applications only verify the migrated schema; DDL remains owned by the migrate service. */
+export async function assertDatabaseReady(instance: Knex = db): Promise<void> {
+  if (instance.client.config.client === 'pg') {
+    await assertPostgresReady(instance);
+    return;
+  }
+  await instance.raw('select 1');
+  const existingColumns = new Map<string, Set<string>>();
+  for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
+    if (!(await instance.schema.hasTable(table))) {
+      continue;
+    }
+    const existing = new Set<string>();
+    for (const column of columns) {
+      if (await instance.schema.hasColumn(table, column)) existing.add(column);
+    }
+    existingColumns.set(table, existing);
+  }
+  const missing = missingColumns(existingColumns);
   if (missing.length) throw new Error(`DATABASE_SCHEMA_NOT_READY:${missing.join(',')}`);
 }
