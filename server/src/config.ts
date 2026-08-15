@@ -21,6 +21,14 @@ const configuredBcryptRounds = Number(process.env.BCRYPT_ROUNDS || 8);
 const configuredAdminImportBodyLimitBytes = Number(
   process.env.ADMIN_IMPORT_BODY_LIMIT_BYTES || 2 * 1024 * 1024
 );
+const isVercelRuntime = process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
+const configuredDbUrl =
+  process.env.DB_URL ||
+  process.env.DB_DATABASE_URL ||
+  process.env.DB_POSTGRES_URL ||
+  './data/csgofriberg.sqlite3';
+const configuredDbClient = process.env.DB_CLIENT ||
+  (isVercelRuntime || /^postgres(?:ql)?:\/\//i.test(configuredDbUrl) ? 'pg' : 'sqlite');
 const vercelOrigins = [process.env.VERCEL_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
   .map((value) => value?.trim())
   .filter((value): value is string => Boolean(value))
@@ -36,8 +44,8 @@ export const config = {
   port: Number(process.env.PORT || 3000),
   jwtSecret,
   guestIdSalt: configuredGuestIdSalt || jwtSecret,
-  dbClient: (process.env.DB_CLIENT || 'sqlite') as 'sqlite' | 'pg',
-  dbUrl: process.env.DB_URL || './data/csgofriberg.sqlite3',
+  dbClient: configuredDbClient as 'sqlite' | 'pg',
+  dbUrl: configuredDbUrl,
   dbPoolMin: Number(process.env.DB_POOL_MIN || 0),
   dbPoolMax: Number(process.env.DB_POOL_MAX || 1),
   dbAcquireTimeoutMs: Math.max(500, Number(process.env.DB_ACQUIRE_TIMEOUT_MS || 3000)),
@@ -81,7 +89,7 @@ export function validateProductionConfig(): void {
   if (!Number.isInteger(config.powDifficulty) || config.powDifficulty < 16 || config.powDifficulty > 24) {
     throw new Error('POW_DIFFICULTY_MUST_BE_BETWEEN_16_AND_24');
   }
-  if (process.env.NODE_ENV !== 'production') return;
+  if (process.env.NODE_ENV !== 'production' && !isVercelRuntime) return;
   if (
     !configuredJwtSecret ||
     Buffer.byteLength(configuredJwtSecret, 'utf8') < 32 ||
