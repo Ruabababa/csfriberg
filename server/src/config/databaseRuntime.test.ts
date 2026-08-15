@@ -11,6 +11,9 @@ const ENV_KEYS = [
   'JWT_SECRET',
   'GUEST_ID_SALT',
   'REDIS_REQUIRED',
+  'TRUST_PROXY',
+  'MULTIPLAYER_ENABLED',
+  'SHOW_LEADERBOARD',
 ] as const;
 
 const originalEnv = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
@@ -46,6 +49,20 @@ describe('Vercel database runtime configuration', () => {
 
     expect(config.dbClient).toBe('pg');
     expect(config.dbUrl).toBe('postgresql://example.invalid/siegeguess');
+  });
+
+  it('normalizes whitespace around boolean environment variables', async () => {
+    process.env.REDIS_REQUIRED = ' true\r\n';
+    process.env.TRUST_PROXY = ' TRUE ';
+    process.env.MULTIPLAYER_ENABLED = ' true\n';
+    process.env.SHOW_LEADERBOARD = ' false\r\n';
+
+    const { config } = await import('../config');
+
+    expect(config.redisRequired).toBe(true);
+    expect(config.trustProxy).toBe(true);
+    expect(config.multiplayerEnabled).toBe(true);
+    expect(config.showLeaderboard).toBe(false);
   });
 
   it('never falls back to SQLite inside a Vercel function', async () => {

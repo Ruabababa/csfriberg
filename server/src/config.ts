@@ -21,7 +21,9 @@ const configuredBcryptRounds = Number(process.env.BCRYPT_ROUNDS || 8);
 const configuredAdminImportBodyLimitBytes = Number(
   process.env.ADMIN_IMPORT_BODY_LIMIT_BYTES || 2 * 1024 * 1024
 );
-const isVercelRuntime = process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
+const normalizedEnvValue = (value: string | undefined) => value?.trim().toLowerCase();
+const isVercelRuntime = normalizedEnvValue(process.env.VERCEL) === '1' ||
+  Boolean(process.env.VERCEL_ENV?.trim());
 const configuredDbUrl =
   process.env.DB_URL?.trim() ||
   process.env.DB_DATABASE_URL?.trim() ||
@@ -49,10 +51,10 @@ export const config = {
   dbPoolMin: Number(process.env.DB_POOL_MIN || 0),
   dbPoolMax: Number(process.env.DB_POOL_MAX || 1),
   dbAcquireTimeoutMs: Math.max(500, Number(process.env.DB_ACQUIRE_TIMEOUT_MS || 3000)),
-  trustProxy: process.env.TRUST_PROXY === 'true',
-  redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+  trustProxy: normalizedEnvValue(process.env.TRUST_PROXY) === 'true',
+  redisUrl: process.env.REDIS_URL?.trim() || 'redis://127.0.0.1:6379',
   redisPrefix: process.env.REDIS_PREFIX || 'csgofriberg:',
-  redisRequired: process.env.REDIS_REQUIRED === 'true',
+  redisRequired: normalizedEnvValue(process.env.REDIS_REQUIRED) === 'true',
   redisCommandTimeoutMs: Number(process.env.REDIS_COMMAND_TIMEOUT_MS || 1500),
   roomLockWaitMs: Math.max(
     100,
@@ -76,8 +78,8 @@ export const config = {
   powDifficulty: Number(process.env.POW_DIFFICULTY || 17),
   powChallengeTtlSeconds: Number(process.env.POW_CHALLENGE_TTL_SECONDS || 120),
   powTokenTtlSeconds: Number(process.env.POW_TOKEN_TTL_SECONDS || 600),
-  showLeaderboard: process.env.SHOW_LEADERBOARD !== 'false',
-  multiplayerEnabled: process.env.MULTIPLAYER_ENABLED === 'true',
+  showLeaderboard: normalizedEnvValue(process.env.SHOW_LEADERBOARD) !== 'false',
+  multiplayerEnabled: normalizedEnvValue(process.env.MULTIPLAYER_ENABLED) === 'true',
   umami: resolveUmamiConfig({
     websiteId: process.env.UMAMI_WEBSITE_ID,
     scriptUrl: process.env.UMAMI_SCRIPT_URL,
@@ -89,7 +91,7 @@ export function validateProductionConfig(): void {
   if (!Number.isInteger(config.powDifficulty) || config.powDifficulty < 16 || config.powDifficulty > 24) {
     throw new Error('POW_DIFFICULTY_MUST_BE_BETWEEN_16_AND_24');
   }
-  if (process.env.NODE_ENV !== 'production' && !isVercelRuntime) return;
+  if (normalizedEnvValue(process.env.NODE_ENV) !== 'production' && !isVercelRuntime) return;
   if (
     !configuredJwtSecret ||
     Buffer.byteLength(configuredJwtSecret, 'utf8') < 32 ||
