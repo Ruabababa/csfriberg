@@ -16,6 +16,7 @@ import RouteError from './components/RouteError';
 import Page from './components/Page';
 import { Wrench } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { MULTIPLAYER_ENABLED } from './config/features';
 
 /* 所有游戏与数据页面均不强制登录,仅管理后台需要管理员身份 */
 function RequireAdmin() {
@@ -42,8 +43,10 @@ export const router = createBrowserRouter([
       { path: '/search', element: <Search /> },
       { path: '/single', element: <SingleLobby /> },
       { path: '/single/:mode', element: <SingleGame /> },
-      { path: '/multi', element: <MultiLobby /> },
-      { path: '/multi/room', element: <MultiRoom /> },
+      ...(MULTIPLAYER_ENABLED ? [
+        { path: '/multi', element: <MultiLobby /> },
+        { path: '/multi/room', element: <MultiRoom /> },
+      ] : []),
       { path: '/stats', element: <Stats /> },
       { path: '/leaderboard', element: <Leaderboard /> },
       { path: '/announcement', element: <Announcements /> },

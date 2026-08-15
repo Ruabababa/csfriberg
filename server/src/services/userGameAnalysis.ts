@@ -1,10 +1,14 @@
+import { normalizeR6Role, R6_CLOSE_RANGES } from '../config/r6DataPolicy';
+import { nationalityFeedbackCode } from '../config/r6CompetitionRegions';
+import { majorAppearances, majorWins, playerStatus, siAppearances, siWins } from '../types';
 import type { Player } from '../types';
 
 // Keep the benchmark bounded while covering the full catalog in normal deployments.
 const MAX_BENCHMARK_GUESSES = 1000;
 const MAX_ANALYZED_STEPS = 60;
 const BENCHMARK_CHUNK_SIZE = 64;
-const FEEDBACK_SIGNATURE_COUNT = 6000;
+// Country feedback and role feedback each have three states.
+const FEEDBACK_SIGNATURE_COUNT = 560000;
 
 function yieldToEventLoop(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
@@ -44,28 +48,71 @@ export interface AnalysisTrajectory {
   steps: AnalysisStep[];
 }
 
-function numberFeedbackCode(guessValue: number, targetValue: number, closeRange: number): number {
+function numberFeedbackCode(
+  guessValue: number | null,
+  targetValue: number | null,
+  closeRange: number
+): number {
+  if (guessValue == null || targetValue == null) return 5;
   if (guessValue === targetValue) return 0;
   const isClose = Math.abs(guessValue - targetValue) <= closeRange;
   return targetValue > guessValue ? (isClose ? 1 : 2) : (isClose ? 3 : 4);
 }
 
+function roleTokens(player: Player): Set<string> {
+  const source = player.roles?.length ? player.roles : [player.role];
+  return new Set(source
+    .flatMap((role) => String(role).split(/[,/|]/))
+    .map((role) => role.trim())
+    .filter(Boolean)
+    .map((role) => normalizeR6Role(role)?.toLocaleLowerCase('en-US')
+      ?? role.toLocaleLowerCase('en-US')));
+}
+
+function roleFeedbackCode(guess: Player, target: Player): number {
+  const guessRoles = roleTokens(guess);
+  const targetRoles = roleTokens(target);
+  if (!guessRoles.size || !targetRoles.size) return 0;
+  const exact = guessRoles.size === targetRoles.size
+    && [...guessRoles].every((role) => targetRoles.has(role));
+  if (exact) return 2;
+  return [...guessRoles].some((role) => targetRoles.has(role)) ? 1 : 0;
+}
+
 function feedbackSignature(guess: Player, target: Player): number {
-  const nationality = guess.nationality === target.nationality
-    ? 2
-    : guess.region && guess.region === target.region ? 1 : 0;
+  const nationality = nationalityFeedbackCode(
+    guess.nationality,
+    target.nationality,
+    guess.region,
+    target.region
+  );
   let signature = guess.id === target.id ? 1 : 0;
   signature = signature * 3 + nationality;
-  signature = signature * 2 + (guess.team === target.team ? 1 : 0);
-  signature = signature * 5 + numberFeedbackCode(guess.age, target.age, 3);
-  signature = signature * 2 + (guess.role === target.role ? 1 : 0);
-  signature = signature * 5 + numberFeedbackCode(guess.major_championships, target.major_championships, 1);
-  signature = signature * 5 + numberFeedbackCode(guess.major_appearances, target.major_appearances, 1);
-  return signature * 2 + (Boolean(guess.is_active) === Boolean(target.is_active) ? 1 : 0);
+  signature = signature * 2 + (Boolean(guess.team) && guess.team === target.team ? 1 : 0);
+  signature = signature * 6 + numberFeedbackCode(guess.age, target.age, R6_CLOSE_RANGES.age);
+  signature = signature * 3 + roleFeedbackCode(guess, target);
+  signature = signature * 6 + numberFeedbackCode(
+    majorWins(guess),
+    majorWins(target),
+    R6_CLOSE_RANGES.majorWins
+  );
+  signature = signature * 6 + numberFeedbackCode(
+    majorAppearances(guess),
+    majorAppearances(target),
+    R6_CLOSE_RANGES.majorAppearances
+  );
+  signature = signature * 6 + numberFeedbackCode(siWins(guess), siWins(target), R6_CLOSE_RANGES.siWins);
+  signature = signature * 6 + numberFeedbackCode(
+    siAppearances(guess),
+    siAppearances(target),
+    R6_CLOSE_RANGES.siAppearances
+  );
+  return signature * 2 + (playerStatus(guess) === playerStatus(target)
+    && playerStatus(guess) !== 'unknown' ? 1 : 0);
 }
 
 function informationGain(
-  signatureRow: Uint16Array,
+  signatureRow: Uint32Array,
   candidateIndexes: number[],
   partitionCounts: Uint16Array,
   touchedSignatures: number[]
@@ -121,16 +168,16 @@ export async function analyzeGameChoices(
   for (const player of allEnabledPlayers) universe.set(player.id, player);
   const universePlayers = [...universe.values()];
   const playerIndexes = new Map(universePlayers.map((player, index) => [player.id, index]));
-  const signatureRows = new Map<number, Uint16Array>();
+  const signatureRows = new Map<number, Uint32Array>();
   const benchmarkCache = new Map<number, Player[]>();
   const scoreCache = new Map<string, Array<{ guess: Player; gain: number }>>();
   const partitionCounts = new Uint16Array(FEEDBACK_SIGNATURE_COUNT);
   const touchedSignatures: number[] = [];
 
-  const getSignatureRow = (guess: Player): Uint16Array => {
+  const getSignatureRow = (guess: Player): Uint32Array => {
     const cached = signatureRows.get(guess.id);
     if (cached) return cached;
-    const row = new Uint16Array(universePlayers.length);
+    const row = new Uint32Array(universePlayers.length);
     for (let index = 0; index < universePlayers.length; index++) {
       row[index] = feedbackSignature(guess, universePlayers[index]);
     }

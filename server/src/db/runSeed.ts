@@ -1,12 +1,11 @@
 import { db } from './knex';
 import { ensureSchema } from './schema';
-import { insertMissingSeedPlayers } from './seedPlayers';
+import { syncSeedPlayers } from './seedPlayers';
 
-// 手动执行:补充种子数据中数据库尚不存在的选手(按昵称去重)
 async function run() {
   await ensureSchema();
-  const inserted = await insertMissingSeedPlayers();
-  console.log(`[seed] 新增 ${inserted} 名选手`);
+  const result = await syncSeedPlayers();
+  console.log(`[seed] Liquipedia 选手同步完成：新增 ${result.created}，更新 ${result.updated}，停用 ${result.disabled}。`);
   await db.destroy();
 }
 

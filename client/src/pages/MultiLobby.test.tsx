@@ -45,32 +45,31 @@ describe('MultiLobby matchmaking', () => {
     expect(await screen.findByText('ready room')).toBeInTheDocument();
   });
 
-  it('remembers create-room and matchmaking options on this browser', async () => {
-    const user = userEvent.setup();
-    const first = renderAtRoute(<MultiLobby />, { route: '/multi', path: '/multi' });
+  it('only exposes beginner and normalizes stored hidden difficulties', async () => {
+    localStorage.setItem('csgofriberg.multi-lobby-preferences', JSON.stringify({
+      createDifficulty: 'easy',
+      boType: 5,
+      allowSpectators: true,
+      matchmakingDifficulty: 'normal',
+    }));
 
-    const easyButtons = await screen.findAllByRole('button', { name: '简单版' });
-    await user.click(easyButtons[0]);
-    await user.click(screen.getByRole('button', { name: 'BO5' }));
-    await user.click(screen.getByRole('checkbox', { name: '允许观战' }));
-    await user.click(easyButtons[1]);
-
-    await waitFor(() => {
-      expect(JSON.parse(localStorage.getItem('csgofriberg.multi-lobby-preferences') ?? '{}'))
-        .toEqual({
-          createDifficulty: 'easy',
-          boType: 5,
-          allowSpectators: true,
-          matchmakingDifficulty: 'easy',
-        });
-    });
-
-    first.unmount();
     renderAtRoute(<MultiLobby />, { route: '/multi', path: '/multi' });
-    const restoredEasyButtons = await screen.findAllByRole('button', { name: '简单版' });
-    expect(restoredEasyButtons[0]).toHaveClass('active');
-    expect(restoredEasyButtons[1]).toHaveClass('active');
+
+    const beginnerButtons = await screen.findAllByRole('button', { name: '入门版' });
+    expect(beginnerButtons).toHaveLength(2);
+    expect(beginnerButtons[0]).toHaveClass('active');
+    expect(beginnerButtons[1]).toHaveClass('active');
+    expect(screen.queryByRole('button', { name: '简单版' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '完整版' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'BO5' })).toHaveClass('active');
     expect(screen.getByRole('checkbox', { name: '允许观战' })).toBeChecked();
+    await waitFor(() => expect(
+      JSON.parse(localStorage.getItem('csgofriberg.multi-lobby-preferences') ?? '{}')
+    ).toEqual({
+      createDifficulty: 'beginner',
+      boType: 5,
+      allowSpectators: true,
+      matchmakingDifficulty: 'beginner',
+    }));
   });
 });

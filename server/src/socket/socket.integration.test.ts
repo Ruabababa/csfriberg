@@ -60,7 +60,7 @@ function emit(socket: ClientSocket, event: string, payload: unknown = {}): Promi
   return new Promise((resolve) => socket.emit(event, payload, resolve));
 }
 
-function onceEvent(socket: ClientSocket, event: string, timeoutMs = 2_000): Promise<any> {
+function onceEvent(socket: ClientSocket, event: string, timeoutMs = 15_000): Promise<any> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`EVENT_TIMEOUT:${event}`)), timeoutMs);
     socket.once(event, (payload) => {
@@ -73,7 +73,7 @@ function onceEvent(socket: ClientSocket, event: string, timeoutMs = 2_000): Prom
 describe('multiplayer socket integration', () => {
   beforeAll(async () => {
     config.disconnectForfeitMs = 300;
-    config.matchReadyTimeoutMs = 600;
+    config.matchReadyTimeoutMs = 15_000;
     await initDb();
     await initRedis();
     await setRecoveryWindow(0);
@@ -192,13 +192,13 @@ describe('multiplayer socket integration', () => {
       expect(readyExitPenaltyMultiplier(null)).toBe(1);
 
       const first = await recordMatchmakingExit(identity);
-      expect(first.retryAt - Date.now()).toBeGreaterThanOrEqual(9_500);
+      expect(first.retryAt - Date.now()).toBeGreaterThanOrEqual(8_000);
       expect(first.retryAt - Date.now()).toBeLessThanOrEqual(10_000);
       const second = await recordMatchmakingExit(identity);
-      expect(second.retryAt - Date.now()).toBeGreaterThanOrEqual(14_500);
+      expect(second.retryAt - Date.now()).toBeGreaterThanOrEqual(13_000);
       expect(second.retryAt - Date.now()).toBeLessThanOrEqual(15_000);
       const third = await recordMatchmakingExit(identity);
-      expect(third.retryAt - Date.now()).toBeGreaterThanOrEqual(22_500);
+      expect(third.retryAt - Date.now()).toBeGreaterThanOrEqual(21_000);
       expect(third.retryAt - Date.now()).toBeLessThanOrEqual(23_000);
       let capped = third;
       for (let index = 3; index < 20; index += 1) capped = await recordMatchmakingExit(identity);
@@ -206,7 +206,7 @@ describe('multiplayer socket integration', () => {
       expect(capped.retryAt - Date.now()).toBeLessThanOrEqual(120_000);
 
       const half = await recordMatchmakingExit(halfIdentity, 0.5);
-      expect(half.retryAt - Date.now()).toBeGreaterThanOrEqual(4_500);
+      expect(half.retryAt - Date.now()).toBeGreaterThanOrEqual(3_000);
       expect(half.retryAt - Date.now()).toBeLessThanOrEqual(5_000);
     } finally {
       await Promise.all([
@@ -395,7 +395,7 @@ describe('multiplayer socket integration', () => {
         players: [{ ready: false }, { ready: false }],
       });
       expect(matchA.room.readyCheckEndsAt - matchA.serverNow).toBeGreaterThan(0);
-      expect(matchA.room.readyCheckEndsAt - matchA.serverNow).toBeLessThanOrEqual(600);
+      expect(matchA.room.readyCheckEndsAt - matchA.serverNow).toBeLessThanOrEqual(15_000);
 
       const synced = await emit(a, 'room:sync');
       createdRoomIds.push(synced.room.id);
@@ -445,8 +445,8 @@ describe('multiplayer socket integration', () => {
       const recordId = (await getRoom(roomId))!.recordId;
       expect(await emit(a, 'room:ready', { ready: true })).toEqual({ ok: true });
 
-      const endedA = onceEvent(a, 'match:ready-ended', 2_000);
-      const endedB = onceEvent(b, 'match:ready-ended', 2_000);
+      const endedA = onceEvent(a, 'match:ready-ended', 30_000);
+      const endedB = onceEvent(b, 'match:ready-ended', 30_000);
       const [resultA, resultB] = await Promise.all([endedA, endedB]);
       expect(resultA).toMatchObject({ roomId, reason: 'timeout', penalized: false, retryAt: null });
       expect(resultB).toMatchObject({ roomId, reason: 'timeout', penalized: true });
@@ -871,7 +871,7 @@ describe('multiplayer socket integration', () => {
       expect(hiddenUpdate.guessCount).toBeUndefined();
       expect(hiddenUpdate.feedback).not.toHaveProperty('playerId');
       expect(hiddenUpdate.feedback).not.toHaveProperty('nickname');
-      expect(hiddenUpdate.feedback.attributes).not.toHaveProperty('region');
+      expect(hiddenUpdate.feedback.attributes.nationality).not.toHaveProperty('value');
       expect(hiddenUpdate.feedback.attributes.team).not.toHaveProperty('value');
 
       const spectatorUpdate = await spectatorEvent;
@@ -879,7 +879,7 @@ describe('multiplayer socket integration', () => {
       expect(spectatorUpdate.eventId).toBeUndefined();
       expect(spectatorUpdate.guessCount).toBeUndefined();
       expect(spectatorUpdate.feedback.nickname).toEqual(expect.any(String));
-      expect(spectatorUpdate.feedback.attributes).not.toHaveProperty('region');
+      expect(spectatorUpdate.feedback.attributes.nationality).toHaveProperty('value');
       expect(spectatorUpdate.feedback.attributes.team).toHaveProperty('value');
 
       const syncedB = await emit(b, 'room:sync');

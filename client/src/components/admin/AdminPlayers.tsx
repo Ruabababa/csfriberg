@@ -11,9 +11,12 @@ import { useTranslation } from 'react-i18next';
 import { difficultyLabel } from '../../utils/difficulty';
 import { AVAILABLE_DIFFICULTIES } from '../../config/difficulties';
 import { countryLabel, regionLabel } from '../../utils/playerGeography';
+import { playerTeamLabel } from '../../utils/playerTeam';
 
 interface AdminPlayer extends PlayerForm {
   id: number;
+  major_championships?: number;
+  major_appearances?: number;
 }
 
 interface PlayerPage {
@@ -50,6 +53,17 @@ export default function AdminPlayers() {
       if (currentRequest !== requestId.current) return;
       setPlayers(res.data.players.map((p) => ({
         ...p,
+        roles: Array.isArray(p.roles) && p.roles.length ? p.roles : [p.role],
+        major_si_championships: Number(p.major_si_championships ?? p.major_championships ?? 0),
+        major_si_appearances: Number(p.major_si_appearances ?? p.major_appearances ?? 0),
+        birth_date: p.birth_date ?? null,
+        source_url: p.source_url ?? null,
+        source_provider: p.source_provider ?? null,
+        source_player_id: p.source_player_id ?? null,
+        source_updated_at: p.source_updated_at ?? null,
+        data_version: p.data_version ?? null,
+        major_si_event_ids: Array.isArray(p.major_si_event_ids) ? p.major_si_event_ids : [],
+        major_si_championship_event_ids: Array.isArray(p.major_si_championship_event_ids) ? p.major_si_championship_event_ids : [],
         difficulties: p.difficulties ?? [],
         is_active: Boolean(p.is_active),
         is_enabled: Boolean(p.is_enabled),
@@ -173,11 +187,11 @@ export default function AdminPlayers() {
     { key: 'nickname', title: t('admin.nickname') },
     { key: 'nationality', title: t('admin.nationality'), render: (p) => countryLabel(t, p.nationality) },
     { key: 'region', title: t('admin.region'), render: (p) => regionLabel(t, p.region) },
-    { key: 'team', title: t('admin.team') },
+    { key: 'team', title: t('admin.team'), render: (p) => playerTeamLabel(t, p.team) },
     { key: 'age', title: t('admin.age') },
-    { key: 'role', title: t('admin.role'), render: (p) => playerRoleLabel(p.role) },
-    { key: 'major_championships', title: t('admin.majorTitles') },
-    { key: 'major_appearances', title: t('admin.major') },
+    { key: 'role', title: t('admin.role'), render: (p) => p.roles.map(playerRoleLabel).join(' / ') },
+    { key: 'major_si_championships', title: t('admin.majorTitles') },
+    { key: 'major_si_appearances', title: t('admin.major') },
     { key: 'difficulties', title: t('admin.difficulties'), render: (p) => p.difficulties.map((key) => difficultyLabel(t, key)).join(', ') },
     { key: 'is_active', title: t('admin.status'), render: (p) => (p.is_active ? t('common.active') : t('common.retired')) },
     { key: 'is_enabled', title: t('admin.pool'), render: (p) => (p.is_enabled ? t('admin.available') : t('admin.disabled')) },

@@ -13,16 +13,12 @@ export default function Search() {
   const { t } = useTranslation();
   const [player, setPlayer] = useState<PlayerInfo | null>(null);
 
-  const lookup = async (nickname: string) => {
+  const lookup = async (id: number) => {
     try {
       const res = await api.get<PlayerInfo[]>('/players', {
-        params: { search: nickname },
+        params: { id },
       });
-      const exact =
-        res.data.find((p) => p.nickname.toLowerCase() === nickname.toLowerCase()) ??
-        res.data[0] ??
-        null;
-      setPlayer(exact);
+      setPlayer(res.data[0] ?? null);
     } catch (err) {
       toast.error(errMsg(err));
     }
@@ -34,7 +30,7 @@ export default function Search() {
       icon={<SearchIcon size={17} />}
       dock={
         <GuessInputBar
-          onPick={(p) => void lookup(p.nickname)}
+          onPick={(p) => void lookup(p.id)}
           placeholder={t('search.placeholder')}
           buttonText={t('search.button')}
         />
@@ -44,10 +40,12 @@ export default function Search() {
         {player ? (
           <div className="card">
             <h3>
-              <CircleDot size={15} color={player.isActive ? '#16a34a' : '#9aa3b2'} />
+              <CircleDot size={15} color={player.status === 'active' ? '#16a34a' : '#9aa3b2'} />
               {player.nickname}
               <span className="muted" style={{ fontWeight: 400 }}>
-                {player.isActive ? t('common.active') : t('common.retired')} · {t('search.age', { age: player.age })}
+                {player.status === 'active'
+                  ? t('common.active')
+                  : player.status === 'retired' ? t('common.retired') : t('common.unknown')}
               </span>
             </h3>
             <PlayerInfoTable
@@ -57,8 +55,13 @@ export default function Search() {
                 nationality: player.nationality,
                 region: player.region,
                 role: player.role,
-                majorChampionships: player.majorChampionships,
+                roles: player.roles,
+                age: player.age,
+                majorWins: player.majorWins,
                 majorAppearances: player.majorAppearances,
+                siWins: player.siWins,
+                siAppearances: player.siAppearances,
+                status: player.status,
                 difficulties: player.difficulties,
               }}
             />

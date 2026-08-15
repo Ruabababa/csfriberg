@@ -14,7 +14,9 @@ export async function backfillBeginnerPlayers(instance: Knex = db): Promise<void
     const ids = (await trx('players as player')
       .join('player_difficulties as difficulty', 'difficulty.player_id', 'player.id')
       .where('difficulty.difficulty_key', 'easy')
-      .where('player.major_championships', '>', 0)
+      .where((query) => query
+        .where('player.major_si_championships', '>', 0)
+        .orWhere('player.major_championships', '>', 0))
       .distinct('player.id'))
       .map((player) => player.id);
     for (let index = 0; index < ids.length; index += 500) {
@@ -35,7 +37,5 @@ export async function backfillBeginnerPlayers(instance: Knex = db): Promise<void
 
 export async function initDb(): Promise<void> {
   await ensureSchema();
-  const seeded = await seedPlayersIfEmpty();
-  if (seeded) console.log(`[seed] 已导入 ${seeded} 名选手`);
   await backfillBeginnerPlayers();
 }

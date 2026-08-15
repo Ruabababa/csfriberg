@@ -145,10 +145,10 @@ describe('desktop/mobile layout contracts', () => {
     // 多人棋盘自己的列宽比例必须正好占满 100%,否则 table-layout: fixed 会自行分配余量
     const widths = [
       ...multiplayer.matchAll(
-        /\.player-board\s+\.game-table\s+td:nth-child\(\d\)\s*\{\s*width:\s*(\d+)%/g
+        /\.player-board\s+\.game-table\s+td:nth-child\(\d+\)\s*\{\s*width:\s*(\d+)%/g
       ),
     ].map((m) => Number(m[1]));
-    expect(widths).toHaveLength(8);
+    expect(widths).toHaveLength(10);
     expect(widths.reduce((a, b) => a + b, 0)).toBe(100);
   });
 

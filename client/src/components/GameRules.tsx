@@ -5,15 +5,12 @@ import {
   BookOpen,
   Eye,
   Flag,
-  MapPinned,
   Target,
   Users,
   X,
 } from 'lucide-react';
 import ModalPortal from './ModalPortal';
 import { useTranslation } from 'react-i18next';
-
-const regions = ['europe', 'cis', 'asia', 'oceania', 'northAmerica', 'southAmerica', 'africaIsrael'] as const;
 
 export default function GameRules() {
   const { t } = useTranslation();
@@ -157,21 +154,6 @@ export default function GameRules() {
                     </ul>
                   </article>
 
-                  <article className="rule-panel rule-panel-regions">
-                    <div className="rule-panel-title">
-                      <span aria-hidden="true"><MapPinned size={20} /></span>
-                      <div><small>03</small><h3>{t('rules.regionsTitle')}</h3></div>
-                    </div>
-                    <p>{t('rules.regionsIntro')}</p>
-                    <div className="region-list">
-                      {regions.map((region) => (
-                        <div className="region-item" key={region}>
-                          <strong>{t(`rules.regions.${region}.name`)}</strong>
-                          <span>{t(`rules.regions.${region}.countries`)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </article>
                 </div>
               </div>
             </div>

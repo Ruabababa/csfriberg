@@ -13,7 +13,10 @@ router.get(
     const rows = await cached('announcements', 300, () =>
       db('announcements').orderBy('created_at', 'desc').limit(50)
     );
-    res.json(rows);
+    res.json(rows.map((row) => ({
+      ...row,
+      is_popup: Number(Boolean(row.is_popup)),
+    })));
   })
 );
 

@@ -1,7 +1,7 @@
 import { randomInt } from 'crypto';
 import { db } from '../db/knex';
 import { redis, redisKey, redisPublisher, redisSubscriber } from '../redis';
-import { Player } from '../types';
+import { Player, majorSiAppearances, majorSiChampionships } from '../types';
 import { DIFFICULTY_LEVELS } from '../difficulties';
 
 const INVALIDATE_CHANNEL = redisKey('players:invalidate');
@@ -9,7 +9,12 @@ const INVALIDATE_CHANNEL = redisKey('players:invalidate');
 const VERSION_KEY = redisKey('players:revision:v2');
 const REFRESH_DEBOUNCE_MS = 100;
 
-type PublicPlayer = { id: number; nickname: string };
+type PublicPlayer = {
+  id: number;
+  nickname: string;
+  team: string;
+  nationality: string;
+};
 type SearchablePlayer = { player: Player; search: string };
 let playersById = new Map<number, Player>();
 let allPlayers: Player[] = [];
@@ -25,6 +30,28 @@ function normalizeSearch(value: string): string {
   return value.trim().toLocaleLowerCase();
 }
 
+function parseRoles(value: unknown, fallback: string): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {
+      // Legacy rows only have the scalar role field.
+    }
+  }
+  return fallback ? [fallback] : [];
+}
+
+function hydratePlayer(row: Player): Player {
+  return {
+    ...row,
+    roles: parseRoles(row.roles, row.role),
+    major_si_championships: majorSiChampionships(row),
+    major_si_appearances: majorSiAppearances(row),
+  };
+}
+
 export async function refreshPlayerCache(): Promise<void> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
@@ -36,7 +63,10 @@ export async function refreshPlayerCache(): Promise<void> {
         db('player_difficulties').select('player_id', 'difficulty_key'),
         redis()?.get(VERSION_KEY) ?? Promise.resolve(null),
       ]);
-      const hydrated = rows.map((player) => ({ ...player, difficulties: [] as string[] }));
+      const hydrated = rows.map((player) => ({
+        ...hydratePlayer(player),
+        difficulties: [] as string[],
+      }));
       const hydratedById = new Map(hydrated.map((player) => [Number(player.id), player]));
       playersByDifficulty = new Map(
         DIFFICULTY_LEVELS
@@ -58,7 +88,12 @@ export async function refreshPlayerCache(): Promise<void> {
       }));
       publicList = {
         version: pendingVersion || storedVersion || String(Date.now()),
-        players: allPlayers.map((player) => ({ id: player.id, nickname: player.nickname })),
+        players: allPlayers.map((player) => ({
+          id: player.id,
+          nickname: player.nickname,
+          team: player.team,
+          nationality: player.nationality,
+        })),
       };
       pendingVersion = null;
       appliedGeneration = requestedGeneration;

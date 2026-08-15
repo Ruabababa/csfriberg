@@ -22,6 +22,16 @@ import { publishResourceVersion } from '../services/resourceVersion';
 import { getPlayerPerformance } from '../services/playerPerformance';
 import { compareGuess, completeGuessFeedback, MAX_GUESSES } from '../services/gameService';
 import { getDifficultyPlayers, getEnabledPlayers, getPlayer } from '../services/playerCache';
+import {
+  majorAppearances,
+  majorSiAppearances,
+  majorSiChampionships,
+  majorWins,
+  playerStatus,
+  siAppearances,
+  siWins,
+} from '../types';
+import { normalizeR6Role } from '../config/r6DataPolicy';
 import type { GuessFeedback, Player } from '../types';
 import { DIFFICULTY_LEVELS } from '../difficulties';
 import { analyzeGameChoices, AnalysisRoundInput } from '../services/userGameAnalysis';
@@ -120,10 +130,58 @@ function replayAnswer(target: Player) {
     region: target.region,
     age: target.age,
     role: target.role,
-    majorChampionships: target.major_championships,
-    majorAppearances: target.major_appearances,
+    roles: target.roles ?? [target.role],
+    majorWins: majorWins(target),
+    majorAppearances: majorAppearances(target),
+    siWins: siWins(target),
+    siAppearances: siAppearances(target),
     isActive: Boolean(target.is_active),
+    status: playerStatus(target),
   };
+}
+
+function exportIsoDateTime(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  const parsed = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function exportIsoDate(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  const parsed = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseStringArray(value: unknown, fallback: string[] = []): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value !== 'string' || !value.trim()) return fallback;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.map(String).filter(Boolean) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function exportRoles(value: unknown): string[] {
+  const rawRoles = parseStringArray(value)
+    .flatMap((role) => role
+      .replace(/in[- ]game leader/gi, '/IGL/')
+      .replace(/entry fragger/gi, '/Entry/')
+      .split(/\s*[/,|]\s*/));
+  const roles = rawRoles
+    .map((role) => normalizeR6Role(role))
+    .filter((role) => role !== null);
+  return [...new Set(roles.length ? roles : ['Entry'])];
 }
 
 function safeGuessIds(value: unknown): number[] {
@@ -466,6 +524,11 @@ router.get(
     res.json({
       players: players.map((player) => ({
         ...player,
+        roles: parseStringArray(player.roles, [String(player.role)]),
+        major_si_championships: majorSiChampionships(player as Player),
+        major_si_appearances: majorSiAppearances(player as Player),
+        major_si_event_ids: parseStringArray(player.major_si_event_ids),
+        major_si_championship_event_ids: parseStringArray(player.major_si_championship_event_ids),
         difficulties: difficultiesByPlayer.get(Number(player.id)) ?? [],
       })),
       total,
@@ -600,6 +663,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const [players, memberships] = await Promise.all([
       db('players')
+        .where({ is_enabled: true })
         .select(
           'id',
           'nickname',
@@ -610,6 +674,17 @@ router.get(
           'role',
           'major_championships',
           'major_appearances',
+          'major_si_championships',
+          'major_si_appearances',
+          'roles',
+          'birth_date',
+          'source_url',
+          'source_provider',
+          'source_player_id',
+          'source_updated_at',
+          'data_version',
+          'major_si_event_ids',
+          'major_si_championship_event_ids',
           'is_active',
           'is_enabled'
         )
@@ -625,19 +700,34 @@ router.get(
       difficulties.push(String(membership.difficulty_key));
       difficultiesByPlayer.set(playerId, difficulties);
     }
-    const exportedPlayers = players.map((player) => ({
+    const exportedPlayers = players.map((player) => {
+      const roles = exportRoles(player.roles);
+      const role = roles[0];
+      return ({
       nickname: String(player.nickname),
       nationality: String(player.nationality),
       region: String(player.region),
       team: String(player.team),
       age: Number(player.age),
-      role: String(player.role),
+      role,
+      roles: roles.length ? roles : [role],
       major_championships: Number(player.major_championships),
       major_appearances: Number(player.major_appearances),
-      difficulties: difficultiesByPlayer.get(Number(player.id)) ?? [],
+      major_si_championships: majorSiChampionships(player as Player),
+      major_si_appearances: majorSiAppearances(player as Player),
+      birth_date: exportIsoDate(player.birth_date),
+      source_url: player.source_url || null,
+      source_provider: player.source_provider || null,
+      source_player_id: player.source_player_id || null,
+      source_updated_at: exportIsoDateTime(player.source_updated_at),
+      data_version: player.data_version || null,
+      major_si_event_ids: parseStringArray(player.major_si_event_ids),
+      major_si_championship_event_ids: parseStringArray(player.major_si_championship_event_ids),
+      difficulties: difficultiesByPlayer.get(Number(player.id)) ?? ['normal'],
       is_active: Boolean(player.is_active),
       is_enabled: Boolean(player.is_enabled),
-    }));
+      });
+    });
     res.attachment('players.json').json(exportedPlayers);
   })
 );

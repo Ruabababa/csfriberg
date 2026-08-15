@@ -1,17 +1,19 @@
 {
-  "name": "csgofriberg",
+  "name": "siegeguess",
   "version": "1.0.0",
   "packageManager": "pnpm@11.13.1",
   "private": true,
-  "description": "弗一把 - CS:GO/CS2 Major 选手猜测游戏",
+  "description": "SiegeGuess - Rainbow Six Siege Major 与 Six Invitational 选手竞猜游戏",
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
     "build": "pnpm build:pow && pnpm --filter client build && pnpm --filter server build",
     "start": "pnpm --filter server start",
     "test": "pnpm --filter server test && pnpm --filter client test",
+    "test:local": "pnpm --filter server test:local && pnpm --filter client test:local",
     "test:client": "pnpm --filter client test",
     "migrate": "pnpm --filter server migrate",
     "seed": "pnpm --filter server seed",
+    "r6:sync": "pnpm --filter server r6:sync",
     "create-admin": "pnpm --filter server create-admin",
     "build:pow": "node scripts/build-pow.mjs",
     "loadtest": "pnpm --filter server loadtest"

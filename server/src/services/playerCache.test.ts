@@ -33,11 +33,11 @@ describe('player cache invalidation', () => {
     const nickname = `cache-test-${Date.now()}`;
     const [row] = await db('players').insert({
       nickname,
-      nationality: '测试',
-      region: '测试',
-      team: '测试',
+      nationality: 'FR',
+      region: 'Europe',
+      team: 'Fixture Team',
       age: 26,
-      role: 'Rifler',
+      role: 'Entry',
       major_championships: 0,
       major_appearances: 0,
       is_active: true,
@@ -47,25 +47,25 @@ describe('player cache invalidation', () => {
 
     await refreshPlayerCache();
     const before = await getPublicPlayerList();
-    expect(before.players).toContainEqual({ id, nickname });
+    expect(before.players).toContainEqual({ id, nickname, team: 'Fixture Team', nationality: 'FR' });
 
     await db('players').where({ id }).update({ is_enabled: false });
     await invalidatePlayerCache();
 
     const after = await getPublicPlayerList();
     expect(after.version).not.toBe(before.version);
-    expect(after.players).not.toContainEqual({ id, nickname });
+    expect(after.players).not.toContainEqual(expect.objectContaining({ id, nickname }));
   });
 
   it('refreshes a stale instance before serving the public list', async () => {
     const nickname = `cache-test-cross-instance-${Date.now()}`;
     const [row] = await db('players').insert({
       nickname,
-      nationality: '测试',
-      region: '测试',
-      team: '测试',
+      nationality: 'CA',
+      region: 'North America',
+      team: 'Fixture Team',
       age: 26,
-      role: 'Rifler',
+      role: 'Flex',
       major_championships: 0,
       major_appearances: 0,
       is_active: true,
@@ -74,23 +74,28 @@ describe('player cache invalidation', () => {
     const id = typeof row === 'object' ? row.id : row;
 
     await refreshPlayerCache();
-    expect((await getPublicPlayerList()).players).toContainEqual({ id, nickname });
+    expect((await getPublicPlayerList()).players).toContainEqual({
+      id,
+      nickname,
+      team: 'Fixture Team',
+      nationality: 'CA',
+    });
 
     await db('players').where({ id }).update({ is_enabled: false });
     await redis()!.incr(redisKey('players:revision:v2'));
 
-    expect((await getPublicPlayerList()).players).not.toContainEqual({ id, nickname });
+    expect((await getPublicPlayerList()).players).not.toContainEqual(expect.objectContaining({ id, nickname }));
   });
 
   it('serves targets from the beginner difficulty pool', async () => {
     const nickname = `cache-test-beginner-${Date.now()}`;
     const [row] = await db('players').insert({
       nickname,
-      nationality: '测试',
-      region: '测试',
-      team: '测试',
+      nationality: 'BR',
+      region: 'Brazil',
+      team: 'Fixture Champions',
       age: 26,
-      role: 'Rifler',
+      role: 'Support',
       major_championships: 1,
       major_appearances: 1,
       is_active: true,

@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler, validateQuery } from '../middleware/common';
-import { getPublicPlayerList, searchCachedPlayers } from '../services/playerCache';
+import { getEnabledPlayer, getPublicPlayerList, searchCachedPlayers } from '../services/playerCache';
 import { rateLimit } from '../middleware/rateLimit';
+import { majorAppearances, majorWins, playerStatus, siAppearances, siWins } from '../types';
 
 const router = Router();
 const playerSearchQuery = z.object({
   search: z.string().trim().max(100).default(''),
   suggest: z.enum(['0', '1']).default('0').transform((value) => value === '1'),
+  id: z.coerce.number().int().positive().optional(),
 });
 
 router.get(
@@ -38,12 +40,20 @@ router.get(
   }),
   validateQuery(playerSearchQuery),
   asyncHandler(async (req, res) => {
-    const { search, suggest } = req.query as unknown as z.infer<typeof playerSearchQuery>;
+    const { search, suggest, id } = req.query as unknown as z.infer<typeof playerSearchQuery>;
 
-    const players = searchCachedPlayers(search, suggest ? 10 : 100);
+    const exactPlayer = id === undefined ? undefined : getEnabledPlayer(id);
+    const players = exactPlayer ? [exactPlayer] : id === undefined
+      ? searchCachedPlayers(search, suggest ? 10 : 100)
+      : [];
 
     if (suggest) {
-      return res.json(players.map((p) => ({ id: p.id, nickname: p.nickname })));
+      return res.json(players.map((p) => ({
+        id: p.id,
+        nickname: p.nickname,
+        team: p.team,
+        nationality: p.nationality,
+      })));
     }
     res.json(
       players.map((p) => ({
@@ -54,10 +64,14 @@ router.get(
         team: p.team,
         age: p.age,
         role: p.role,
-        majorChampionships: p.major_championships,
-        majorAppearances: p.major_appearances,
+        roles: p.roles ?? [p.role],
+        majorWins: majorWins(p),
+        majorAppearances: majorAppearances(p),
+        siWins: siWins(p),
+        siAppearances: siAppearances(p),
         difficulties: p.difficulties ?? [],
         isActive: Boolean(p.is_active),
+        status: playerStatus(p),
       }))
     );
   })

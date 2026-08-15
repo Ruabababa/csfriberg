@@ -1,5 +1,4 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderAtRoute } from '../test/render';
 import Stats from './Stats';
@@ -59,12 +58,11 @@ describe('Stats difficulty filter', () => {
     });
   });
 
-  it('merges selected difficulties into one personal and global summary', async () => {
-    const user = userEvent.setup();
+  it('only requests and exposes beginner statistics', async () => {
     renderAtRoute(<Stats />);
 
     await waitFor(() => expect(apiGet).toHaveBeenCalledWith('/stats/me', {
-      params: { difficulties: 'beginner,easy,normal' },
+      params: { difficulties: 'beginner' },
     }));
     expect(await screen.findByText('全部分级', { selector: '.difficulty-multi-select-summary' })).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: '个人统计', level: 3 })).toHaveLength(1);
@@ -78,22 +76,10 @@ describe('Stats difficulty filter', () => {
     expect(within(globalCard).getByText('多人胜场平均猜测次数')).toBeInTheDocument();
     expect(within(globalCard).getByText('2.25')).toBeInTheDocument();
 
-    await user.click(screen.getByText('全部分级', { selector: '.difficulty-multi-select-summary' }));
     const difficultyGroup = screen.getByRole('group', { name: '统计难度' });
-    await user.click(within(difficultyGroup).getByRole('checkbox', { name: '入门版' }));
-
-    await waitFor(() => expect(apiGet).toHaveBeenCalledWith('/stats/me', {
-      params: { difficulties: 'easy,normal' },
-    }));
-    expect(screen.getByText('简单版, 完整版', { selector: '.difficulty-multi-select-summary' })).toBeInTheDocument();
-    expect(await screen.findByText('5')).toBeInTheDocument();
-    expect(screen.getByText('50')).toBeInTheDocument();
-    expect(apiGet.mock.calls.filter(([url]) => url === '/stats/me')).toHaveLength(2);
-
-    await user.click(within(difficultyGroup).getByRole('checkbox', { name: '全部分级' }));
-    await waitFor(() => expect(apiGet.mock.calls.filter(([url]) => url === '/stats/me')).toHaveLength(3));
-    expect(apiGet).toHaveBeenLastCalledWith('/stats/me', {
-      params: { difficulties: 'beginner,easy,normal' },
-    });
+    expect(within(difficultyGroup).getByRole('checkbox', { name: '入门版' })).toBeDisabled();
+    expect(within(difficultyGroup).queryByRole('checkbox', { name: '简单版' })).not.toBeInTheDocument();
+    expect(within(difficultyGroup).queryByRole('checkbox', { name: '完整版' })).not.toBeInTheDocument();
+    expect(apiGet.mock.calls.filter(([url]) => url === '/stats/me')).toHaveLength(1);
   });
 });

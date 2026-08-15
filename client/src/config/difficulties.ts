@@ -7,8 +7,8 @@ export interface DifficultyOption {
 
 export const DIFFICULTIES: DifficultyOption[] = [
   { key: 'beginner', sortOrder: 5, enabled: true, recommended: true },
-  { key: 'easy', sortOrder: 10, enabled: true },
-  { key: 'normal', sortOrder: 20, enabled: true },
+  { key: 'easy', sortOrder: 10, enabled: false },
+  { key: 'normal', sortOrder: 20, enabled: false },
 ];
 
 export const AVAILABLE_DIFFICULTIES = DIFFICULTIES

@@ -26,7 +26,7 @@ import LanguageSelect from '../components/LanguageSelect';
 import HomeSpecialThanks from '../components/HomeSpecialThanks';
 import HomeFriendLinks from '../components/HomeFriendLinks';
 import PersonalSettings from '../components/PersonalSettings';
-import wanjiqiImage from '../assets/wjq.jpg';
+import { MULTIPLAYER_ENABLED } from '../config/features';
 
 function GitHubIcon() {
   return (
@@ -88,13 +88,17 @@ export default function Home() {
     setLoggingOut(true);
     try {
       await api.post('/auth/logout');
-      const { closeSocket } = await import('../api/socket');
-      closeSocket();
+      if (MULTIPLAYER_ENABLED) {
+        const { closeSocket } = await import('../api/socket');
+        closeSocket();
+      }
       clearAuthenticated();
       markGuestSession();
       setUser(null);
-      const { getSocket } = await import('../api/socket');
-      getSocket();
+      if (MULTIPLAYER_ENABLED) {
+        const { getSocket } = await import('../api/socket');
+        getSocket();
+      }
       navigate('/');
     } catch (error) {
       toast.error(errMsg(error));
@@ -111,7 +115,7 @@ export default function Home() {
       <div className="header-bar">
         <div className="home-brand">
           <span className="home-brand-slashes" aria-hidden="true">//</span>
-          <img className="home-brand-logo" src={wanjiqiImage} alt="" />
+          <span className="home-brand-logo" aria-hidden="true">R6</span>
           <span className="title">{t('common.brand')}</span>
         </div>
         <span className="btns">
@@ -155,24 +159,34 @@ export default function Home() {
       </div>
       <main className="page-scroll" id="main-content">
         <div className="home-hero">
-          <span className="hero-kicker">CS MAJOR // PLAYER GUESSING</span>
-          <h1>{t('common.brand')}</h1>
-          <p className="hero-subtitle">{t('home.subtitle')}</p>
-          <a
-            className="home-sponsor-link"
-            href="https://www.douyu.com/6979222"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-umami-event="home-wanjiqi-sponsor"
-          >
-            {t('home.titleSponsor')}
-          </a>
-          <GameRules />
-          {initialized && !user && (
-            <p className="muted" style={{ marginTop: 6 }}>
-              {t('home.guestHint')}
-            </p>
-          )}
+          <div className="home-hero-copy">
+            <span className="hero-kicker">TACTICAL ROSTER INTELLIGENCE</span>
+            <h1>{t('common.brand')}</h1>
+            <p className="hero-subtitle">{t('home.subtitle')}</p>
+            <div className="hero-actions">
+              <Link className="btn" to="/single">
+                <Gamepad2 size={16} />
+                {t('home.singleMode')}
+              </Link>
+              <GameRules />
+            </div>
+            {initialized && !user && (
+              <p className="muted" style={{ marginTop: 10 }}>
+                {t('home.guestHint')}
+              </p>
+            )}
+          </div>
+          <div className="home-hero-visual" aria-hidden="true">
+            <div className="r6-telemetry r6-telemetry-top">
+              <span>EVENT POOL</span>
+              <strong>MAJOR + SI</strong>
+            </div>
+            <div className="r6-signal">R6</div>
+            <div className="r6-telemetry r6-telemetry-bottom">
+              <span>GUESS LIMIT</span>
+              <strong>08 ATTEMPTS</strong>
+            </div>
+          </div>
         </div>
         <div className="menu-grid">
           <MenuCard
@@ -180,21 +194,23 @@ export default function Home() {
             icon={<Gamepad2 size={22} />}
             label={t('home.singleMode')}
             description={t('home.singleModeDescription')}
-            color="#74e38f"
+            color="#f28c28"
           />
-          <MenuCard
-            to="/multi"
-            icon={<Globe size={22} />}
-            label={t('home.multiplayer')}
-            description={t('home.multiplayerDescription')}
-            color="#ffb64e"
-          />
+          {MULTIPLAYER_ENABLED && (
+            <MenuCard
+              to="/multi"
+              icon={<Globe size={22} />}
+              label={t('home.multiplayer')}
+              description={t('home.multiplayerDescription')}
+              color="#58c7bd"
+            />
+          )}
           <MenuCard
             to="/search"
             icon={<Search size={22} />}
             label={t('home.search')}
             description={t('home.searchDescription')}
-            color="#65a8ff"
+            color="#7b91aa"
           />
         </div>
         <div className="bottom-bar">
@@ -215,7 +231,7 @@ export default function Home() {
           <HomeSpecialThanks />
           <HomeFriendLinks />
           <a
-            href="https://space.bilibili.com/290893104"
+            href="https://space.bilibili.com/396400626"
             className="btn btn-bilibili"
             target="_blank"
             rel="noopener noreferrer"
@@ -225,7 +241,7 @@ export default function Home() {
             {t('home.bilibili')}
           </a>
           <a
-            href="https://github.com/shnlfriberg/csgofriberg"
+            href="https://github.com/Ruabababa/csfriberg"
             className="btn btn-github"
             target="_blank"
             rel="noopener noreferrer"

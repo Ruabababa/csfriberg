@@ -9,8 +9,10 @@ export const POW_COOKIE = 'csgofriberg_pow';
 export const POW_ALGORITHM = 'csgofriberg-pow-v1';
 
 const DOMAIN = Buffer.from(`${POW_ALGORITHM}\0`, 'ascii');
+const MAX_CHALLENGE_CACHE = 10_000;
 const MAX_TOKEN_CACHE = 10_000;
 const MAX_FINGERPRINT_CACHE = 512;
+const challengeCache = new Map<string, StoredChallenge & { expiresAt: number }>();
 const tokenCache = new Map<string, { access: PowAccess; fingerprint: string }>();
 const fingerprintCache = new Map<string, string>();
 
@@ -26,6 +28,15 @@ interface PowTokenPayload {
   jti: string;
   difficulty: number;
   exp?: number;
+}
+
+function pruneChallengeCache(now = Date.now()): void {
+  for (const [id, challenge] of challengeCache) {
+    if (challenge.expiresAt <= now) challengeCache.delete(id);
+  }
+  while (challengeCache.size >= MAX_CHALLENGE_CACHE) {
+    challengeCache.delete(challengeCache.keys().next().value!);
+  }
 }
 
 export interface PowAccess {
@@ -88,7 +99,6 @@ export function hasLeadingZeroBits(digest: Uint8Array, difficulty: number): bool
 
 export async function createChallenge(userAgent: string | undefined) {
   const client = redis();
-  if (!client) throw new Error('REDIS_UNAVAILABLE');
   const id = crypto.randomUUID();
   const challenge = crypto.randomBytes(32).toString('base64url');
   const stored: StoredChallenge = {
@@ -96,10 +106,18 @@ export async function createChallenge(userAgent: string | undefined) {
     difficulty: config.powDifficulty,
     fingerprint: browserFingerprint(userAgent),
   };
-  await client.set(redisKey(`pow:challenge:${id}`), JSON.stringify(stored), {
-    EX: config.powChallengeTtlSeconds,
-    NX: true,
-  });
+  if (client) {
+    await client.set(redisKey(`pow:challenge:${id}`), JSON.stringify(stored), {
+      EX: config.powChallengeTtlSeconds,
+      NX: true,
+    });
+  } else {
+    pruneChallengeCache();
+    challengeCache.set(id, {
+      ...stored,
+      expiresAt: Date.now() + config.powChallengeTtlSeconds * 1000,
+    });
+  }
   return {
     id,
     challenge,
@@ -115,17 +133,25 @@ export async function consumeAndVerifyChallenge(
   userAgent: string | undefined
 ): Promise<number> {
   const client = redis();
-  if (!client) throw new Error('REDIS_UNAVAILABLE');
-  const raw = await client.sendCommand([
-    'GETDEL',
-    redisKey(`pow:challenge:${id}`),
-  ]) as string | null;
-  if (!raw) throw new PowVerificationError('POW_CHALLENGE_EXPIRED');
   let stored: StoredChallenge;
-  try {
-    stored = JSON.parse(raw) as StoredChallenge;
-  } catch {
-    throw new PowVerificationError('POW_CHALLENGE_INVALID');
+  if (client) {
+    const raw = await client.sendCommand([
+      'GETDEL',
+      redisKey(`pow:challenge:${id}`),
+    ]) as string | null;
+    if (!raw) throw new PowVerificationError('POW_CHALLENGE_EXPIRED');
+    try {
+      stored = JSON.parse(raw) as StoredChallenge;
+    } catch {
+      throw new PowVerificationError('POW_CHALLENGE_INVALID');
+    }
+  } else {
+    const cached = challengeCache.get(id);
+    challengeCache.delete(id);
+    if (!cached || cached.expiresAt <= Date.now()) {
+      throw new PowVerificationError('POW_CHALLENGE_EXPIRED');
+    }
+    stored = cached;
   }
   if (!Number.isInteger(stored.difficulty) || stored.difficulty < 16 || stored.difficulty > 24) {
     throw new PowVerificationError('POW_CHALLENGE_INVALID');

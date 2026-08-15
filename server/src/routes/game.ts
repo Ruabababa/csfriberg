@@ -3,7 +3,15 @@ import { z } from 'zod';
 import { db } from '../db/knex';
 import { optionalAuth } from '../middleware/auth';
 import { validateBody, validateParams, asyncHandler, HttpError } from '../middleware/common';
-import { GuessFeedback, Player } from '../types';
+import {
+  GuessFeedback,
+  Player,
+  majorAppearances,
+  majorWins,
+  playerStatus,
+  siAppearances,
+  siWins,
+} from '../types';
 import { compareGuess, completeGuessFeedback, MAX_GUESSES } from '../services/gameService';
 import { getEnabledPlayer, getPlayer, isDifficultyAvailable } from '../services/playerCache';
 import { rateLimit, requestIdentity } from '../middleware/rateLimit';
@@ -47,9 +55,14 @@ function answerView(target: Player) {
     team: target.team,
     nationality: target.nationality,
     region: target.region,
+    age: target.age,
     role: target.role,
-    majorChampionships: target.major_championships,
-    majorAppearances: target.major_appearances,
+    roles: target.roles ?? [target.role],
+    majorWins: majorWins(target),
+    majorAppearances: majorAppearances(target),
+    siWins: siWins(target),
+    siAppearances: siAppearances(target),
+    status: playerStatus(target),
   };
 }
 
