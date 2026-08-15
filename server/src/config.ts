@@ -23,11 +23,11 @@ const configuredAdminImportBodyLimitBytes = Number(
 );
 const isVercelRuntime = process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
 const configuredDbUrl =
-  process.env.DB_URL ||
-  process.env.DB_DATABASE_URL ||
-  process.env.DB_POSTGRES_URL ||
+  process.env.DB_URL?.trim() ||
+  process.env.DB_DATABASE_URL?.trim() ||
+  process.env.DB_POSTGRES_URL?.trim() ||
   './data/csgofriberg.sqlite3';
-const configuredDbClient = process.env.DB_CLIENT ||
+const configuredDbClient = process.env.DB_CLIENT?.trim().toLowerCase() ||
   (isVercelRuntime || /^postgres(?:ql)?:\/\//i.test(configuredDbUrl) ? 'pg' : 'sqlite');
 const vercelOrigins = [process.env.VERCEL_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
   .map((value) => value?.trim())

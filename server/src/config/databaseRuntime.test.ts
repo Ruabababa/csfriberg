@@ -38,6 +38,16 @@ describe('Vercel database runtime configuration', () => {
     expect(config.dbUrl).toBe(process.env.DB_DATABASE_URL);
   });
 
+  it('normalizes whitespace around Vercel database variables', async () => {
+    process.env.DB_CLIENT = '  PG\r\n';
+    process.env.DB_URL = '  postgresql://example.invalid/siegeguess  ';
+
+    const { config } = await import('../config');
+
+    expect(config.dbClient).toBe('pg');
+    expect(config.dbUrl).toBe('postgresql://example.invalid/siegeguess');
+  });
+
   it('never falls back to SQLite inside a Vercel function', async () => {
     delete process.env.DB_CLIENT;
     delete process.env.DB_URL;
