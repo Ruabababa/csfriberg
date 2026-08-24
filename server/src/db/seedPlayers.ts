@@ -1,4 +1,5 @@
 import type { Knex } from 'knex';
+import crypto from 'crypto';
 import { competitionRegionForNationality } from '../config/r6CompetitionRegions';
 import { normalizeR6Role } from '../config/r6DataPolicy';
 import { db } from './knex';
@@ -22,6 +23,57 @@ interface SeedPlayer {
 }
 
 const seedPlayers = playersData as SeedPlayer[];
+export const FIXED_SEED_PLAYER_COUNT = 81;
+
+export interface FixedSeedSummary {
+  players: number;
+  playerIdSha256: string;
+  sourceProvider: 'liquipedia';
+  sourceUpdatedAt: { earliest: string; latest: string };
+}
+
+export function validateSeedPlayers(data: unknown = playersData): asserts data is SeedPlayer[] {
+  if (!Array.isArray(data) || data.length !== FIXED_SEED_PLAYER_COUNT) {
+    throw new Error(`FIXED_SEED_COUNT_MUST_BE_${FIXED_SEED_PLAYER_COUNT}`);
+  }
+  const ids = new Set<string>();
+  for (const player of data) {
+    if (!player || typeof player !== 'object') throw new Error('INVALID_SEED_PLAYER');
+    const row = player as SeedPlayer;
+    if (!row.player_id?.trim() || ids.has(row.player_id)) throw new Error('SEED_PLAYER_ID_MUST_BE_UNIQUE');
+    ids.add(row.player_id);
+    if (!row.nickname?.trim() || !row.country_region?.trim() || !row.current_team?.trim()) {
+      throw new Error(`SEED_PLAYER_REQUIRED_FIELD_MISSING:${row.player_id}`);
+    }
+    if (!Number.isInteger(row.major_appearances) || !Number.isInteger(row.major_wins) ||
+      !Number.isInteger(row.si_appearances) || !Number.isInteger(row.si_wins) ||
+      row.major_appearances < 0 || row.major_wins < 0 || row.si_appearances < 0 || row.si_wins < 0 ||
+      row.major_wins > row.major_appearances || row.si_wins > row.si_appearances) {
+      throw new Error(`SEED_PLAYER_STATS_INVALID:${row.player_id}`);
+    }
+    if (!row.birth_date || !row.status_raw || !row.liquipedia_url || !row.scraped_at) {
+      throw new Error(`SEED_PLAYER_METADATA_MISSING:${row.player_id}`);
+    }
+  }
+}
+
+export function fixedSeedSummary(data: unknown = playersData): FixedSeedSummary {
+  validateSeedPlayers(data);
+  const players = data as SeedPlayer[];
+  const sourceDates = players.map((player) => player.scraped_at).sort();
+  return {
+    players: players.length,
+    playerIdSha256: crypto
+      .createHash('sha256')
+      .update(players.map((player) => player.player_id).sort().join('\n'))
+      .digest('hex'),
+    sourceProvider: 'liquipedia',
+    sourceUpdatedAt: {
+      earliest: sourceDates[0]!,
+      latest: sourceDates.at(-1)!,
+    },
+  };
+}
 
 export interface SeedSyncResult {
   created: number;
@@ -96,6 +148,7 @@ function seedRow(player: SeedPlayer) {
 }
 
 export async function syncSeedPlayers(instance: Knex = db): Promise<SeedSyncResult> {
+  validateSeedPlayers();
   const rows = seedPlayers.map(seedRow);
   const seedIds = new Set(seedPlayers.map((player) => player.player_id));
   const seedById = new Map(seedPlayers.map((player) => [player.player_id, player]));
@@ -139,6 +192,9 @@ export async function syncSeedPlayers(instance: Knex = db): Promise<SeedSyncResu
       .where({ source_provider: 'liquipedia' })
       .whereIn('source_player_id', [...seedIds])
       .select('id', 'source_player_id');
+    if (synced.length !== FIXED_SEED_PLAYER_COUNT) {
+      throw new Error('FIXED_SEED_IMPORT_INCOMPLETE:' + synced.length);
+    }
     const syncedIds = synced
       .filter((player) => existingEnabledById.get(String(player.source_player_id)) !== false)
       .map((player) => Number(player.id));

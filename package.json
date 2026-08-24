@@ -15,6 +15,11 @@
     "seed": "pnpm --filter server seed",
     "r6:sync": "pnpm --filter server r6:sync",
     "create-admin": "pnpm --filter server create-admin",
+    "check:production": "pnpm --filter server exec tsx ../scripts/check-production.ts",
+    "db:backup": "node scripts/db-backup.mjs",
+    "db:restore": "node scripts/db-restore.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "check:seed": "node scripts/check-seed.mjs",
     "build:pow": "node scripts/build-pow.mjs",
     "loadtest": "pnpm --filter server loadtest"
   },

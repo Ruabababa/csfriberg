@@ -25,7 +25,6 @@ async function resolveSnapshotPath(value: string): Promise<string> {
 
 async function main(): Promise<void> {
   const source = argument('--source') ?? 'snapshot';
-  if (source === 'api') throw new Error('LIQUIPEDIA_API_NOT_CONFIGURED');
   if (source !== 'snapshot') throw new Error(`UNSUPPORTED_R6_SYNC_SOURCE:${source}`);
   const snapshotPath = argument('--snapshot');
   if (!snapshotPath) throw new Error('R6_SNAPSHOT_PATH_REQUIRED');

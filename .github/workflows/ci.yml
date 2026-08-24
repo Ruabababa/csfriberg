@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:local
+      - run: pnpm build
+      - run: pnpm check:seed
+      - run: git diff --check
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: siegeguess
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres -d siegeguess"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7.4
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      NODE_ENV: test
+      DB_CLIENT: pg
+      DB_URL: postgresql://postgres:postgres@localhost:5432/siegeguess
+      REDIS_URL: redis://localhost:6379
+      REDIS_REQUIRED: 'true'
+      MULTIPLAYER_ENABLED: 'true'
+      VITE_MULTIPLAYER_ENABLED: 'true'
+      JWT_SECRET: integration-test-jwt-secret-012345678901234567890
+      GUEST_ID_SALT: integration-test-guest-salt-012345678901234567890
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm migrate
+      - run: pnpm seed
+      - run: pnpm --filter server test

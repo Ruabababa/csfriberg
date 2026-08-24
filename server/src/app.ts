@@ -22,6 +22,7 @@ import powRoutes from './routes/pow';
 import statsRoutes from './routes/stats';
 import { isRedisAvailable } from './redis';
 import { getRuntimeSnapshot } from './services/runtimeMonitor';
+import { getEnabledPlayers } from './services/playerCache';
 import { injectUmamiScript } from './services/umami';
 
 const CLOUDFLARE_INSIGHTS_SCRIPT_ORIGIN = 'https://static.cloudflareinsights.com';
@@ -104,6 +105,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/health', (_req, res) => res.json({
     ok: true,
     redis: isRedisAvailable() ? 'up' : 'degraded',
+    players: getEnabledPlayers().length,
     features: {
       leaderboard: config.showLeaderboard,
       multiplayer: config.multiplayerEnabled,

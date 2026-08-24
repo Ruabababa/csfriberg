@@ -13,6 +13,7 @@ dotenv.config({ path: serverEnvPath });
 
 const configuredJwtSecret = process.env.JWT_SECRET?.trim();
 const configuredGuestIdSalt = process.env.GUEST_ID_SALT?.trim();
+const configuredRedisUrl = process.env.REDIS_URL?.trim();
 const unsafeJwtSecrets = new Set(['dev-secret', 'change-me-in-production']);
 const jwtSecret = configuredJwtSecret || crypto.randomBytes(48).toString('base64url');
 const configuredPasswordWorkers = Number(process.env.PASSWORD_WORKERS || 2);
@@ -52,7 +53,7 @@ export const config = {
   dbPoolMax: Number(process.env.DB_POOL_MAX || 1),
   dbAcquireTimeoutMs: Math.max(500, Number(process.env.DB_ACQUIRE_TIMEOUT_MS || 3000)),
   trustProxy: normalizedEnvValue(process.env.TRUST_PROXY) === 'true',
-  redisUrl: process.env.REDIS_URL?.trim() || 'redis://127.0.0.1:6379',
+  redisUrl: configuredRedisUrl || 'redis://127.0.0.1:6379',
   redisPrefix: process.env.REDIS_PREFIX || 'csgofriberg:',
   redisRequired: normalizedEnvValue(process.env.REDIS_REQUIRED) === 'true',
   redisCommandTimeoutMs: Number(process.env.REDIS_COMMAND_TIMEOUT_MS || 1500),
@@ -92,6 +93,9 @@ export function validateProductionConfig(): void {
     throw new Error('POW_DIFFICULTY_MUST_BE_BETWEEN_16_AND_24');
   }
   if (normalizedEnvValue(process.env.NODE_ENV) !== 'production' && !isVercelRuntime) return;
+  if (normalizedEnvValue(process.env.NODE_ENV) !== 'production') {
+    throw new Error('NODE_ENV_MUST_BE_PRODUCTION');
+  }
   if (
     !configuredJwtSecret ||
     Buffer.byteLength(configuredJwtSecret, 'utf8') < 32 ||
@@ -99,9 +103,38 @@ export function validateProductionConfig(): void {
   ) {
     throw new Error('JWT_SECRET_MUST_BE_AT_LEAST_32_RANDOM_BYTES');
   }
-  if (configuredGuestIdSalt && Buffer.byteLength(configuredGuestIdSalt, 'utf8') < 32) {
+  if (
+    !configuredGuestIdSalt ||
+    Buffer.byteLength(configuredGuestIdSalt, 'utf8') < 32
+  ) {
     throw new Error('GUEST_ID_SALT_MUST_BE_AT_LEAST_32_RANDOM_BYTES');
   }
+  if (configuredGuestIdSalt === configuredJwtSecret) {
+    throw new Error('GUEST_ID_SALT_MUST_DIFFER_FROM_JWT_SECRET');
+  }
   if (config.dbClient !== 'pg') throw new Error('POSTGRESQL_REQUIRED_IN_PRODUCTION');
+  if (!configuredDbUrl || !/^postgres(?:ql):\/\//i.test(configuredDbUrl)) {
+    throw new Error('POSTGRESQL_URL_REQUIRED_IN_PRODUCTION');
+  }
   if (!config.redisRequired) throw new Error('REDIS_REQUIRED_MUST_BE_TRUE_IN_PRODUCTION');
+  if (!configuredRedisUrl) throw new Error('REDIS_URL_REQUIRED_IN_PRODUCTION');
+  try {
+    const redisUrl = new URL(configuredRedisUrl);
+    if (!['redis:', 'rediss:'].includes(redisUrl.protocol)) {
+      throw new Error('REDIS_URL_INVALID_IN_PRODUCTION');
+    }
+    if (['localhost', '127.0.0.1', '::1'].includes(redisUrl.hostname.toLowerCase())) {
+      throw new Error('LOCAL_REDIS_FORBIDDEN_IN_PRODUCTION');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.endsWith('_IN_PRODUCTION')) throw error;
+    throw new Error('REDIS_URL_INVALID_IN_PRODUCTION');
+  }
+  if (!config.trustProxy) throw new Error('TRUST_PROXY_MUST_BE_TRUE_IN_PRODUCTION');
+  if (config.multiplayerEnabled || normalizedEnvValue(process.env.VITE_MULTIPLAYER_ENABLED) === 'true') {
+    throw new Error('MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
+  }
+  if (!configuredCorsOrigins.length || configuredCorsOrigins.some((origin) => /localhost|127\.0\.0\.1|\[::1\]/i.test(origin))) {
+    throw new Error('LOCAL_CORS_ORIGIN_FORBIDDEN_IN_PRODUCTION');
+  }
 }

@@ -11,8 +11,11 @@ const ENV_KEYS = [
   'JWT_SECRET',
   'GUEST_ID_SALT',
   'REDIS_REQUIRED',
+  'REDIS_URL',
   'TRUST_PROXY',
   'MULTIPLAYER_ENABLED',
+  'VITE_MULTIPLAYER_ENABLED',
+  'CORS_ORIGINS',
   'SHOW_LEADERBOARD',
 ] as const;
 
@@ -28,6 +31,27 @@ afterEach(() => {
 });
 
 describe('Vercel database runtime configuration', () => {
+  async function expectProductionConfigError(
+    mutate: () => void,
+    error: string,
+  ): Promise<void> {
+    process.env.NODE_ENV = 'production';
+    process.env.DB_CLIENT = 'pg';
+    process.env.DB_URL = 'postgresql://example.invalid/siegeguess';
+    process.env.JWT_SECRET = 'a'.repeat(32);
+    process.env.GUEST_ID_SALT = 'b'.repeat(32);
+    process.env.REDIS_REQUIRED = 'true';
+    process.env.REDIS_URL = 'rediss://redis.example.invalid:6380';
+    process.env.TRUST_PROXY = 'true';
+    process.env.MULTIPLAYER_ENABLED = 'false';
+    process.env.VITE_MULTIPLAYER_ENABLED = 'false';
+    process.env.CORS_ORIGINS = 'https://siegeguess.example';
+    mutate();
+    vi.resetModules();
+    const { validateProductionConfig } = await import('../config');
+    expect(() => validateProductionConfig()).toThrow(error);
+  }
+
   it('uses the pooled Neon integration URL when custom database variables are absent', async () => {
     delete process.env.DB_CLIENT;
     delete process.env.DB_URL;
@@ -88,6 +112,16 @@ describe('Vercel database runtime configuration', () => {
 
     const { validateProductionConfig } = await import('../config');
 
-    expect(() => validateProductionConfig()).toThrow('REDIS_REQUIRED_MUST_BE_TRUE_IN_PRODUCTION');
+    expect(() => validateProductionConfig()).toThrow('NODE_ENV_MUST_BE_PRODUCTION');
+  });
+
+  it('rejects unsafe production fallbacks and launch-incompatible configuration', async () => {
+    await expectProductionConfigError(() => { delete process.env.GUEST_ID_SALT; }, 'GUEST_ID_SALT_MUST_BE_AT_LEAST_32_RANDOM_BYTES');
+    await expectProductionConfigError(() => { process.env.GUEST_ID_SALT = process.env.JWT_SECRET; }, 'GUEST_ID_SALT_MUST_DIFFER_FROM_JWT_SECRET');
+    await expectProductionConfigError(() => { process.env.REDIS_URL = 'redis://127.0.0.1:6379'; }, 'LOCAL_REDIS_FORBIDDEN_IN_PRODUCTION');
+    await expectProductionConfigError(() => { process.env.TRUST_PROXY = 'false'; }, 'TRUST_PROXY_MUST_BE_TRUE_IN_PRODUCTION');
+    await expectProductionConfigError(() => { process.env.CORS_ORIGINS = 'http://localhost:5173'; }, 'LOCAL_CORS_ORIGIN_FORBIDDEN_IN_PRODUCTION');
+    await expectProductionConfigError(() => { process.env.MULTIPLAYER_ENABLED = 'true'; }, 'MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
+    await expectProductionConfigError(() => { process.env.VITE_MULTIPLAYER_ENABLED = 'true'; }, 'MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
   });
 });
