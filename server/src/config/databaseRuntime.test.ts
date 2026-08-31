@@ -121,7 +121,33 @@ describe('Vercel database runtime configuration', () => {
     await expectProductionConfigError(() => { process.env.REDIS_URL = 'redis://127.0.0.1:6379'; }, 'LOCAL_REDIS_FORBIDDEN_IN_PRODUCTION');
     await expectProductionConfigError(() => { process.env.TRUST_PROXY = 'false'; }, 'TRUST_PROXY_MUST_BE_TRUE_IN_PRODUCTION');
     await expectProductionConfigError(() => { process.env.CORS_ORIGINS = 'http://localhost:5173'; }, 'LOCAL_CORS_ORIGIN_FORBIDDEN_IN_PRODUCTION');
-    await expectProductionConfigError(() => { process.env.MULTIPLAYER_ENABLED = 'true'; }, 'MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
-    await expectProductionConfigError(() => { process.env.VITE_MULTIPLAYER_ENABLED = 'true'; }, 'MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
+    await expectProductionConfigError(() => {
+      process.env.VERCEL = '1';
+      process.env.MULTIPLAYER_ENABLED = 'true';
+    }, 'MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
+    await expectProductionConfigError(() => {
+      process.env.VERCEL = '1';
+      process.env.VITE_MULTIPLAYER_ENABLED = 'true';
+    }, 'MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
+  });
+
+  it('allows multiplayer on a persistent production host', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.DB_CLIENT = 'pg';
+    process.env.DB_URL = 'postgresql://example.invalid/siegeguess';
+    process.env.JWT_SECRET = 'a'.repeat(32);
+    process.env.GUEST_ID_SALT = 'b'.repeat(32);
+    process.env.REDIS_REQUIRED = 'true';
+    process.env.REDIS_URL = 'rediss://redis.example.invalid:6380';
+    process.env.TRUST_PROXY = 'true';
+    process.env.MULTIPLAYER_ENABLED = 'true';
+    process.env.VITE_MULTIPLAYER_ENABLED = 'true';
+    process.env.CORS_ORIGINS = 'https://siegeguess.example';
+    delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
+
+    const { validateProductionConfig } = await import('../config');
+
+    expect(() => validateProductionConfig()).not.toThrow();
   });
 });

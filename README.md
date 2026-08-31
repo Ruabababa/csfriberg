@@ -45,7 +45,13 @@ DB_CLIENT=pg DB_URL='postgresql://...' pnpm seed
 - [R6_DATA_POLICY.md](docs/R6_DATA_POLICY.md)
 - [R6_ROLLOUT.md](docs/R6_ROLLOUT.md)
 
-## Vercel 部署
+## 部署
+
+### 阿里云 ECS（推荐）
+
+项目可直接以长期运行的 Express + Socket.IO 服务部署到阿里云 ECS，并可开启多人模式。仓库已提供 `Dockerfile`、`compose.yaml` 和 Nginx 反向代理配置；完整的 RDS、Redis、HTTPS 和备案前置步骤见 [ALIYUN_ECS_DEPLOY.md](docs/ALIYUN_ECS_DEPLOY.md)。
+
+### Vercel
 
 项目面向 Vercel Hobby：Vite 静态产物由 CDN 提供，api/index.js 是 Express Serverless 入口。生产依赖 Neon PostgreSQL 和支持 TCP/TLS 的 Upstash Redis。
 

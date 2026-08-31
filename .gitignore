@@ -4,6 +4,7 @@ client/dist/
 server/dist/
 .vercel/
 .vercel_build_output/
+.env.production
 *.log
 *.tsbuildinfo
 pow-wasm/target/

@@ -131,7 +131,10 @@ export function validateProductionConfig(): void {
     throw new Error('REDIS_URL_INVALID_IN_PRODUCTION');
   }
   if (!config.trustProxy) throw new Error('TRUST_PROXY_MUST_BE_TRUE_IN_PRODUCTION');
-  if (config.multiplayerEnabled || normalizedEnvValue(process.env.VITE_MULTIPLAYER_ENABLED) === 'true') {
+  // Vercel functions cannot keep Socket.IO connections alive. Persistent hosts such as ECS can.
+  if (isVercelRuntime && (
+    config.multiplayerEnabled || normalizedEnvValue(process.env.VITE_MULTIPLAYER_ENABLED) === 'true'
+  )) {
     throw new Error('MULTIPLAYER_MUST_BE_DISABLED_FOR_VERCEL_LAUNCH');
   }
   if (!configuredCorsOrigins.length || configuredCorsOrigins.some((origin) => /localhost|127\.0\.0\.1|\[::1\]/i.test(origin))) {
